@@ -19,12 +19,12 @@ export const getMatiereConfig = (matiere: string) =>
 export const DUREES = ["15 min", "30 min", "45 min", "1h", "2h"];
 
 export const SLOT_COLORS = [
-  { key: "blue",   classes: "bg-blue-100 text-blue-700 border-blue-200",     dot: "bg-blue-400" },
-  { key: "orange", classes: "bg-orange-100 text-orange-700 border-orange-200", dot: "bg-orange-400" },
-  { key: "violet", classes: "bg-violet-100 text-violet-700 border-violet-200", dot: "bg-violet-400" },
-  { key: "green",  classes: "bg-green-100 text-green-700 border-green-200",   dot: "bg-green-400" },
-  { key: "pink",   classes: "bg-pink-100 text-pink-700 border-pink-200",     dot: "bg-pink-400" },
-  { key: "yellow", classes: "bg-yellow-100 text-yellow-700 border-yellow-200", dot: "bg-yellow-400" },
+  { key: "blue",   classes: "bg-blue-900/40 text-blue-200 border-blue-500/30",     dot: "bg-blue-400" },
+  { key: "orange", classes: "bg-orange-900/40 text-orange-200 border-orange-500/30", dot: "bg-orange-400" },
+  { key: "violet", classes: "bg-violet-900/40 text-violet-200 border-violet-500/30", dot: "bg-violet-400" },
+  { key: "green",  classes: "bg-green-900/40 text-green-200 border-green-500/30",   dot: "bg-green-400" },
+  { key: "pink",   classes: "bg-pink-900/40 text-pink-200 border-pink-500/30",     dot: "bg-pink-400" },
+  { key: "yellow", classes: "bg-yellow-900/40 text-yellow-200 border-yellow-500/30", dot: "bg-yellow-400" },
 ];
 
 export const CATEGORIES_PLANNING = ["École", "Cours particulier", "Activité", "Devoirs"];

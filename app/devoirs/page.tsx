@@ -38,7 +38,6 @@ function getDateLabel(dateStr: string): string {
 }
 
 const DATE_ORDER = ["Aujourd'hui", "Demain", "Après-demain"];
-
 const EMPTY_FORM = { matiere: "", titre: "", dueDate: "", duree: "30 min" };
 
 export default function DevoirsPage() {
@@ -108,10 +107,11 @@ export default function DevoirsPage() {
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-gray-800">📚 Mes Devoirs</h1>
+        <h1 className="text-2xl font-extrabold text-white">📚 Mes Devoirs</h1>
         <button
           onClick={openAdd}
-          className="flex items-center gap-1.5 bg-violet-500 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
+          className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
+          style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
         >
           <Plus size={16} />
           Ajouter
@@ -119,12 +119,12 @@ export default function DevoirsPage() {
       </div>
 
       {sortedGroups.length === 0 && (
-        <p className="text-center text-gray-400 mt-16 text-lg">Aucun devoir 🎉</p>
+        <p className="text-center mt-16 text-lg" style={{ color: "#a78bfa" }}>Aucun devoir 🎉</p>
       )}
 
       {sortedGroups.map(([label, items]) => (
         <div key={label} className="mb-6">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#f9a8d4" }}>
             {label}
           </h2>
           <div className="flex flex-col gap-3">
@@ -133,43 +133,40 @@ export default function DevoirsPage() {
               return (
                 <div
                   key={d.id}
-                  className={`rounded-3xl p-4 ${cfg.bg} flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
+                  className={`rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-40" : ""}`}
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
                 >
                   <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
                       {d.matiere}
                     </span>
-                    <p className={`text-gray-700 font-semibold mt-1.5 text-sm ${d.completed ? "line-through text-gray-400" : ""}`}>
+                    <p className={`text-white font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`}>
                       {d.titre}
                     </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <Clock size={12} className="text-gray-400" />
-                      <span className="text-xs text-gray-400">{d.duree}</span>
+                      <Clock size={12} style={{ color: "#a78bfa" }} />
+                      <span className="text-xs" style={{ color: "#a78bfa" }}>{d.duree}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       onClick={() => openEdit(d)}
-                      className="p-1.5 rounded-xl hover:bg-black/5 active:scale-90 transition-transform"
+                      className="p-1.5 rounded-xl active:scale-90 transition-transform"
+                      style={{ color: "#a78bfa" }}
                     >
-                      <Pencil size={15} className="text-gray-400" />
+                      <Pencil size={15} />
                     </button>
                     <button
                       onClick={() => handleDelete(d.id)}
-                      className="p-1.5 rounded-xl hover:bg-black/5 active:scale-90 transition-transform"
+                      className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-400"
                     >
-                      <Trash2 size={15} className="text-red-400" />
+                      <Trash2 size={15} />
                     </button>
-                    <button
-                      onClick={() => toggle(d.id)}
-                      className="active:scale-90 transition-transform"
-                    >
-                      {d.completed ? (
-                        <CheckCircle2 size={28} className="text-green-500" />
-                      ) : (
-                        <Circle size={28} className="text-gray-300" />
-                      )}
+                    <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform">
+                      {d.completed
+                        ? <CheckCircle2 size={28} className="text-green-400" />
+                        : <Circle size={28} style={{ color: "rgba(255,255,255,0.3)" }} />}
                     </button>
                   </div>
                 </div>
@@ -182,13 +179,13 @@ export default function DevoirsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-white">
               {editing ? "Modifier le devoir" : "Ajouter un devoir"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
-              <Label>Matière</Label>
+              <Label style={{ color: "#e9d5ff" }}>Matière</Label>
               <Select
                 value={form.matiere}
                 onValueChange={(v) => setForm((f) => ({ ...f, matiere: v ?? f.matiere }))}
@@ -198,15 +195,13 @@ export default function DevoirsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {MATIERES.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>
-                      {m.value}
-                    </SelectItem>
+                    <SelectItem key={m.value} value={m.value}>{m.value}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Titre</Label>
+              <Label style={{ color: "#e9d5ff" }}>Titre</Label>
               <Input
                 className="rounded-2xl"
                 placeholder="Ex: Exercices page 45"
@@ -215,7 +210,7 @@ export default function DevoirsPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Date limite</Label>
+              <Label style={{ color: "#e9d5ff" }}>Date limite</Label>
               <Input
                 type="date"
                 className="rounded-2xl"
@@ -224,7 +219,7 @@ export default function DevoirsPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Durée estimée</Label>
+              <Label style={{ color: "#e9d5ff" }}>Durée estimée</Label>
               <Select
                 value={form.duree}
                 onValueChange={(v) => setForm((f) => ({ ...f, duree: v ?? f.duree }))}
@@ -240,17 +235,19 @@ export default function DevoirsPage() {
               </Select>
             </div>
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 border-0 bg-transparent">
             <button
               onClick={() => setOpen(false)}
-              className="px-4 py-2 rounded-2xl text-gray-500 font-semibold text-sm hover:bg-gray-100"
+              className="px-4 py-2 rounded-2xl font-semibold text-sm"
+              style={{ color: "#a78bfa" }}
             >
               Annuler
             </button>
             <button
               onClick={handleSubmit}
               disabled={!form.matiere || !form.titre || !form.dueDate}
-              className="px-5 py-2 rounded-2xl bg-violet-500 text-white font-bold text-sm disabled:opacity-40"
+              className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
             >
               {editing ? "Modifier" : "Ajouter"}
             </button>
