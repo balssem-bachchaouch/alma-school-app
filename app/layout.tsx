@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import StarField from "@/components/StarField";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,8 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={inter.variable}>
-      <body className="min-h-screen font-[family-name:var(--font-inter)] bg-[#F8F7FF]">
-        <main className="pb-28">{children}</main>
+      <body className="min-h-screen font-[family-name:var(--font-inter)]">
+        <StarField />
+        <main className="relative z-10 pb-28">{children}</main>
         <BottomNav />
       </body>
     </html>
