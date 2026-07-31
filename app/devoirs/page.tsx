@@ -1,69 +1,146 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Clock, CheckCircle2, Circle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Clock, CheckCircle2, Circle, Pencil, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { Devoir } from "@/lib/types";
+import { getDevoirs, saveDevoirs } from "@/lib/storage";
+import { getMatiereConfig, MATIERES, DUREES } from "@/lib/constants";
 
-const devoirsData = [
-  {
-    date: "Aujourd'hui",
-    devoirs: [
-      { id: 1, matiere: "Mathématiques", titre: "Exercices page 45", duree: "30 min", badge: "bg-orange-100 text-orange-700", dot: "bg-orange-400" },
-      { id: 2, matiere: "Français", titre: "Rédaction sur les vacances", duree: "45 min", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-400" },
-      { id: 3, matiere: "Arabe", titre: "Apprendre vocabulaire leçon 3", duree: "20 min", badge: "bg-green-100 text-green-700", dot: "bg-green-400" },
-    ],
-  },
-  {
-    date: "Demain",
-    devoirs: [
-      { id: 4, matiere: "Sciences", titre: "Schéma de la cellule", duree: "40 min", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-400" },
-      { id: 5, matiere: "Anglais", titre: "Verbes irréguliers", duree: "25 min", badge: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-400" },
-    ],
-  },
-  {
-    date: "Après-demain",
-    devoirs: [
-      { id: 6, matiere: "Histoire-Géo", titre: "Résumé chapitre 3 : Les Romains", duree: "35 min", badge: "bg-pink-100 text-pink-700", dot: "bg-pink-400" },
-    ],
-  },
-];
+function getDateLabel(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const afterTomorrow = new Date(today);
+  afterTomorrow.setDate(afterTomorrow.getDate() + 2);
+
+  if (date.getTime() === today.getTime()) return "Aujourd'hui";
+  if (date.getTime() === tomorrow.getTime()) return "Demain";
+  if (date.getTime() === afterTomorrow.getTime()) return "Après-demain";
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+}
+
+const DATE_ORDER = ["Aujourd'hui", "Demain", "Après-demain"];
+
+const EMPTY_FORM = { matiere: "", titre: "", dueDate: "", duree: "30 min" };
 
 export default function DevoirsPage() {
-  const [completed, setCompleted] = useState<number[]>([]);
+  const [devoirs, setDevoirs] = useState<Devoir[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Devoir | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  const toggle = (id: number) =>
-    setCompleted((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+  useEffect(() => {
+    setDevoirs(getDevoirs());
+    setLoaded(true);
+  }, []);
+
+  const persist = (updated: Devoir[]) => {
+    setDevoirs(updated);
+    saveDevoirs(updated);
+  };
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm({ ...EMPTY_FORM, dueDate: new Date().toISOString().split("T")[0] });
+    setOpen(true);
+  };
+
+  const openEdit = (d: Devoir) => {
+    setEditing(d);
+    setForm({ matiere: d.matiere, titre: d.titre, dueDate: d.dueDate, duree: d.duree });
+    setOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!form.matiere || !form.titre || !form.dueDate) return;
+    if (editing) {
+      persist(devoirs.map((d) => (d.id === editing.id ? { ...d, ...form } : d)));
+    } else {
+      persist([...devoirs, { id: crypto.randomUUID(), ...form, completed: false }]);
+    }
+    setOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    if (!window.confirm("Supprimer ce devoir ?")) return;
+    persist(devoirs.filter((d) => d.id !== id));
+  };
+
+  const toggle = (id: string) =>
+    persist(devoirs.map((d) => (d.id === id ? { ...d, completed: !d.completed } : d)));
+
+  if (!loaded) return null;
+
+  const groups = devoirs.reduce<Record<string, Devoir[]>>((acc, d) => {
+    const label = getDateLabel(d.dueDate);
+    acc[label] = [...(acc[label] ?? []), d];
+    return acc;
+  }, {});
+
+  const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
+    const ai = DATE_ORDER.indexOf(a);
+    const bi = DATE_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
 
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-extrabold text-gray-800">📚 Mes Devoirs</h1>
-        <button className="flex items-center gap-1.5 bg-violet-500 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform">
+        <button
+          onClick={openAdd}
+          className="flex items-center gap-1.5 bg-violet-500 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
+        >
           <Plus size={16} />
           Ajouter
         </button>
       </div>
 
-      {devoirsData.map((group) => (
-        <div key={group.date} className="mb-6">
+      {sortedGroups.length === 0 && (
+        <p className="text-center text-gray-400 mt-16 text-lg">Aucun devoir 🎉</p>
+      )}
+
+      {sortedGroups.map(([label, items]) => (
+        <div key={label} className="mb-6">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
-            {group.date}
+            {label}
           </h2>
           <div className="flex flex-col gap-3">
-            {group.devoirs.map((d) => {
-              const done = completed.includes(d.id);
+            {items.map((d) => {
+              const cfg = getMatiereConfig(d.matiere);
               return (
                 <div
                   key={d.id}
-                  className={`bg-white rounded-3xl p-4 flex items-center gap-4 shadow-sm transition-opacity ${done ? "opacity-50" : ""}`}
+                  className={`rounded-3xl p-4 ${cfg.bg} flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
                 >
-                  <div className={`w-3 h-3 rounded-full ${d.dot} flex-shrink-0`} />
+                  <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${d.badge}`}>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
                       {d.matiere}
                     </span>
-                    <p className={`text-gray-700 font-semibold mt-1.5 text-sm ${done ? "line-through text-gray-400" : ""}`}>
+                    <p className={`text-gray-700 font-semibold mt-1.5 text-sm ${d.completed ? "line-through text-gray-400" : ""}`}>
                       {d.titre}
                     </p>
                     <div className="flex items-center gap-1 mt-1">
@@ -71,22 +148,115 @@ export default function DevoirsPage() {
                       <span className="text-xs text-gray-400">{d.duree}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => toggle(d.id)}
-                    className="flex-shrink-0 active:scale-90 transition-transform"
-                  >
-                    {done ? (
-                      <CheckCircle2 size={30} className="text-green-500" />
-                    ) : (
-                      <Circle size={30} className="text-gray-300" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => openEdit(d)}
+                      className="p-1.5 rounded-xl hover:bg-black/5 active:scale-90 transition-transform"
+                    >
+                      <Pencil size={15} className="text-gray-400" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(d.id)}
+                      className="p-1.5 rounded-xl hover:bg-black/5 active:scale-90 transition-transform"
+                    >
+                      <Trash2 size={15} className="text-red-400" />
+                    </button>
+                    <button
+                      onClick={() => toggle(d.id)}
+                      className="active:scale-90 transition-transform"
+                    >
+                      {d.completed ? (
+                        <CheckCircle2 size={28} className="text-green-500" />
+                      ) : (
+                        <Circle size={28} className="text-gray-300" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
       ))}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="rounded-3xl mx-4 max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {editing ? "Modifier le devoir" : "Ajouter un devoir"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <Label>Matière</Label>
+              <Select
+                value={form.matiere}
+                onValueChange={(v) => setForm((f) => ({ ...f, matiere: v ?? f.matiere }))}
+              >
+                <SelectTrigger className="rounded-2xl">
+                  <SelectValue placeholder="Choisir une matière" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MATIERES.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>
+                      {m.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Titre</Label>
+              <Input
+                className="rounded-2xl"
+                placeholder="Ex: Exercices page 45"
+                value={form.titre}
+                onChange={(e) => setForm((f) => ({ ...f, titre: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Date limite</Label>
+              <Input
+                type="date"
+                className="rounded-2xl"
+                value={form.dueDate}
+                onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Durée estimée</Label>
+              <Select
+                value={form.duree}
+                onValueChange={(v) => setForm((f) => ({ ...f, duree: v ?? f.duree }))}
+              >
+                <SelectTrigger className="rounded-2xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DUREES.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <button
+              onClick={() => setOpen(false)}
+              className="px-4 py-2 rounded-2xl text-gray-500 font-semibold text-sm hover:bg-gray-100"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!form.matiere || !form.titre || !form.dueDate}
+              className="px-5 py-2 rounded-2xl bg-violet-500 text-white font-bold text-sm disabled:opacity-40"
+            >
+              {editing ? "Modifier" : "Ajouter"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
