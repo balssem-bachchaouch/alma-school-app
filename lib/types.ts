@@ -22,3 +22,10 @@ export interface CartableItem {
   label: string;
   categorie: string;
 }
+
+export interface GameStats {
+  coins: number;
+  totalCompleted: number;
+  lastActiveDate: string;
+  streak: number;
+}

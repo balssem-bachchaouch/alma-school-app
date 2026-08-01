@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Clock, CheckCircle2, Circle, Pencil, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +20,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Devoir } from "@/lib/types";
-import { getDevoirs, saveDevoirs } from "@/lib/storage";
+import { getDevoirs, saveDevoirs, addCoins, removeCoins, getGameStats, saveGameStats } from "@/lib/storage";
 import { getMatiereConfig, MATIERES, DUREES } from "@/lib/constants";
+import { updateStreak } from "@/lib/streak";
 
 function getDateLabel(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
@@ -46,6 +48,7 @@ export default function DevoirsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Devoir | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [coinToast, setCoinToast] = useState<string | null>(null);
 
   useEffect(() => {
     setDevoirs(getDevoirs());
@@ -84,8 +87,26 @@ export default function DevoirsPage() {
     persist(devoirs.filter((d) => d.id !== id));
   };
 
-  const toggle = (id: string) =>
-    persist(devoirs.map((d) => (d.id === id ? { ...d, completed: !d.completed } : d)));
+  const toggle = (id: string) => {
+    const devoir = devoirs.find((d) => d.id === id);
+    if (!devoir) return;
+
+    const nowCompleted = !devoir.completed;
+    const updated = devoirs.map((d) => (d.id === id ? { ...d, completed: nowCompleted } : d));
+    persist(updated);
+
+    if (nowCompleted) {
+      addCoins(10);
+      // Update totalCompleted and streak
+      const stats = updateStreak(getGameStats());
+      saveGameStats({ ...stats, totalCompleted: stats.totalCompleted + 1 });
+      // Show coin toast
+      setCoinToast(id);
+      setTimeout(() => setCoinToast(null), 1100);
+    } else {
+      removeCoins(10);
+    }
+  };
 
   if (!loaded) return null;
 
@@ -133,7 +154,7 @@ export default function DevoirsPage() {
               return (
                 <div
                   key={d.id}
-                  className={`rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-40" : ""}`}
+                  className={`relative rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-40" : ""}`}
                   style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
                 >
                   <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
@@ -149,7 +170,7 @@ export default function DevoirsPage() {
                       <span className="text-xs" style={{ color: "#a78bfa" }}>{d.duree}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0 relative">
                     <button
                       onClick={() => openEdit(d)}
                       className="p-1.5 rounded-xl active:scale-90 transition-transform"
@@ -163,10 +184,25 @@ export default function DevoirsPage() {
                     >
                       <Trash2 size={15} />
                     </button>
-                    <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform">
+                    <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative">
                       {d.completed
                         ? <CheckCircle2 size={28} className="text-green-400" />
                         : <Circle size={28} style={{ color: "rgba(255,255,255,0.3)" }} />}
+                      <AnimatePresence>
+                        {coinToast === d.id && (
+                          <motion.span
+                            key="toast"
+                            initial={{ y: 0, opacity: 1 }}
+                            animate={{ y: -40, opacity: 0 }}
+                            exit={{}}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="absolute left-1/2 -translate-x-1/2 bottom-full text-sm font-bold pointer-events-none whitespace-nowrap"
+                            style={{ color: "#f59e0b" }}
+                          >
+                            +10 🪙
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
                     </button>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import type { Devoir, PlanningSlot, CartableItem } from "./types";
+import type { Devoir, PlanningSlot, CartableItem, GameStats } from "./types";
 
 export function get<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -93,3 +93,24 @@ export function getCartableItems(): CartableItem[] {
   return stored;
 }
 export function saveCartableItems(i: CartableItem[]) { set("alma_cartable_items", i); }
+
+const GAME_STATS_KEY = "alma_game_stats";
+const DEFAULT_STATS: GameStats = { coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 };
+
+export function getGameStats(): GameStats {
+  return get<GameStats>(GAME_STATS_KEY, DEFAULT_STATS);
+}
+
+export function saveGameStats(stats: GameStats): void {
+  set(GAME_STATS_KEY, stats);
+}
+
+export function addCoins(amount: number): void {
+  const stats = getGameStats();
+  saveGameStats({ ...stats, coins: stats.coins + amount });
+}
+
+export function removeCoins(amount: number): void {
+  const stats = getGameStats();
+  saveGameStats({ ...stats, coins: Math.max(0, stats.coins - amount) });
+}

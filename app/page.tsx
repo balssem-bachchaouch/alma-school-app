@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, CheckCircle2, Circle } from "lucide-react";
-import type { Devoir } from "@/lib/types";
-import { get, getDevoirs, saveDevoirs } from "@/lib/storage";
+import type { Devoir, GameStats } from "@/lib/types";
+import { getDevoirs, saveDevoirs, getGameStats, saveGameStats } from "@/lib/storage";
 import { getMatiereConfig } from "@/lib/constants";
+import { updateStreak } from "@/lib/streak";
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -24,19 +25,26 @@ function getTodayFr() {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+function streakLabel(streak: number): string {
+  if (streak === 0) return "Commence ta série !";
+  if (streak === 1) return "1 jour de suite ! 🔥";
+  return `${streak} jours de suite ! 🔥`;
+}
+
 export default function HomePage() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
-  const [coins, setCoins] = useState(0);
-  const [streak, setStreak] = useState(5);
+  const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
   const [badges, setBadges] = useState<string[]>(["🌟 Premier pas"]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setDevoirs(getDevoirs());
-    const stats = get<{ coins: number } | null>("alma_game_stats", null);
-    setCoins(stats?.coins ?? 0);
-    setStreak(get<number>("alma_streak", 5));
-    setBadges(get<string[]>("alma_badges", ["🌟 Premier pas"]));
+    const rawStats = getGameStats();
+    const updated = updateStreak(rawStats);
+    if (updated !== rawStats) saveGameStats(updated);
+    setStats(updated);
+    const stored = localStorage.getItem("alma_badges");
+    if (stored) setBadges(JSON.parse(stored) as string[]);
     setLoaded(true);
   }, []);
 
@@ -55,7 +63,6 @@ export default function HomePage() {
     saveDevoirs(updated);
   };
 
-  // max 3 badge slots; unfilled → "???"
   const badgeSlots = [
     ...badges.slice(0, 3),
     ...Array(Math.max(0, 3 - badges.length)).fill("???"),
@@ -68,12 +75,16 @@ export default function HomePage() {
 
       {/* ── TOP BAR ── */}
       <div className="flex items-center justify-between mb-3">
-        <div
+        <motion.div
+          key={stats.coins}
+          initial={{ scale: 1.3 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 15 }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white"
           style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
         >
-          🪙 {coins}
-        </div>
+          🪙 {stats.coins}
+        </motion.div>
         <span className="text-xs font-bold tracking-widest" style={{ color: "#c084fc" }}>
           ALMA
         </span>
@@ -119,13 +130,15 @@ export default function HomePage() {
             className="relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold text-white"
             style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
           >
-            <motion.div
-              className="absolute inset-0 rounded-full"
-              style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
-              animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <span className="relative">🔥 {streak} jours de suite !</span>
+            {stats.streak > 0 && (
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
+                animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+            )}
+            <span className="relative">{streakLabel(stats.streak)}</span>
           </motion.div>
         </div>
       </div>
