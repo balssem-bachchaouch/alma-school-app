@@ -22,7 +22,6 @@ export default function LoginPage() {
       setError(err);
     } else {
       router.push("/");
-      router.refresh();
     }
   };
 

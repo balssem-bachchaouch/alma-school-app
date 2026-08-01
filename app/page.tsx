@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, CheckCircle2, Circle } from "lucide-react";
 import type { Devoir, GameStats } from "@/lib/types";
@@ -36,12 +36,15 @@ export default function HomePage() {
   const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
   const [badges, setBadges] = useState<string[]>(["🌟 Premier pas"]);
   const [loaded, setLoaded] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     setDevoirs(getDevoirs());
     const rawStats = getGameStats();
     const updated = updateStreak(rawStats);
-    if (updated !== rawStats) saveGameStats(updated);
+    saveGameStats(updated);
     setStats(updated);
     const stored = localStorage.getItem("alma_badges");
     if (stored) setBadges(JSON.parse(stored) as string[]);

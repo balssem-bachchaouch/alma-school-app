@@ -1,5 +1,5 @@
-const CACHE = "alma-v1";
-const PRECACHE = ["/", "/devoirs", "/planning", "/cartable"];
+const CACHE = "alma-v2";
+const PRECACHE = [];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)));
@@ -17,6 +17,9 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  // Skip navigation requests so the auth proxy (proxy.ts) handles them directly.
+  // Caching nav redirects caused an infinite /login ↔ / loop.
+  if (e.request.mode === "navigate") return;
   e.respondWith(
     caches.match(e.request).then((cached) => cached ?? fetch(e.request))
   );
