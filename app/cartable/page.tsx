@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,10 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { CartableItem } from "@/lib/types";
-import { getCartableItems, saveCartableItems } from "@/lib/storage";
+import type { CartableItem, Badge } from "@/lib/types";
+import { getCartableItems, saveCartableItems, getGameStats, getDevoirs, getBadges, saveBadges } from "@/lib/storage";
 import { CATEGORIES_CARTABLE } from "@/lib/constants";
+import { checkAndUnlockBadges } from "@/lib/badges";
 
 const BURST_COLORS = [
   "#F87171", "#FB923C", "#FBBF24", "#34D399",
@@ -35,6 +36,8 @@ export default function CartablePage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ label: "", categorie: "École" });
   const [burstKey, setBurstKey] = useState(0);
+  const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
+  const wasAllDone = useRef(false);
 
   useEffect(() => {
     const savedItems = getCartableItems();
@@ -59,7 +62,21 @@ export default function CartablePage() {
   const allDone = total > 0 && done === total;
 
   useEffect(() => {
-    if (allDone) setBurstKey((k) => k + 1);
+    if (allDone && !wasAllDone.current) {
+      setBurstKey((k) => k + 1);
+      const count = parseInt(localStorage.getItem("alma_cartable_completions") ?? "0", 10) + 1;
+      localStorage.setItem("alma_cartable_completions", String(count));
+      const currentBadges = getBadges();
+      const { updatedBadges, newlyUnlocked } = checkAndUnlockBadges(
+        getGameStats(), getDevoirs(), currentBadges, count
+      );
+      saveBadges(updatedBadges);
+      if (newlyUnlocked.length > 0) {
+        setBadgeToast(newlyUnlocked[0]);
+        setTimeout(() => setBadgeToast(null), 3000);
+      }
+    }
+    wasAllDone.current = allDone;
   }, [allDone]);
 
   const persistChecked = (next: string[]) => {
@@ -209,6 +226,22 @@ export default function CartablePage() {
           </p>
         </div>
       )}
+
+      {/* ── BADGE TOAST ── */}
+      <AnimatePresence>
+        {badgeToast && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white whitespace-nowrap shadow-lg"
+            style={{ background: "#1a0a35", border: "1px solid rgba(139,92,246,0.6)" }}
+          >
+            🏅 Nouveau badge : {badgeToast.emoji} {badgeToast.name} !
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add dialog */}
       <Dialog open={open} onOpenChange={setOpen}>

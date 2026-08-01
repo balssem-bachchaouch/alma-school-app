@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Circle } from "lucide-react";
-import type { Devoir, GameStats } from "@/lib/types";
-import { getDevoirs, saveDevoirs, getGameStats, saveGameStats } from "@/lib/storage";
+import type { Devoir, GameStats, Badge } from "@/lib/types";
+import {
+  getDevoirs,
+  saveDevoirs,
+  getGameStats,
+  saveGameStats,
+  getBadges,
+  saveBadges,
+} from "@/lib/storage";
 import { getMatiereConfig } from "@/lib/constants";
 import { updateStreak } from "@/lib/streak";
+import { checkAndUnlockBadges } from "@/lib/badges";
+import Mascotte, { getMascotteState, getMascotteMessage } from "@/components/Mascotte";
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -34,7 +44,9 @@ function streakLabel(streak: number): string {
 export default function HomePage() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
-  const [badges, setBadges] = useState<string[]>(["🌟 Premier pas"]);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [celebrating, setCelebrating] = useState(false);
+  const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
   const [loaded, setLoaded] = useState(false);
   const initialized = useRef(false);
 
@@ -46,8 +58,7 @@ export default function HomePage() {
     const updated = updateStreak(rawStats);
     saveGameStats(updated);
     setStats(updated);
-    const stored = localStorage.getItem("alma_badges");
-    if (stored) setBadges(JSON.parse(stored) as string[]);
+    setBadges(getBadges());
     setLoaded(true);
   }, []);
 
@@ -58,17 +69,62 @@ export default function HomePage() {
   const devoirsDemain = devoirs.filter((d) => d.dueDate === tomorrow);
   const nextPending = devoirsAujourdhui.find((d) => !d.completed);
 
+  const mascotteState = getMascotteState(stats, devoirs, celebrating);
+
   const toggle = (id: string) => {
-    const updated = devoirs.map((d) =>
-      d.id === id ? { ...d, completed: !d.completed } : d
-    );
-    setDevoirs(updated);
-    saveDevoirs(updated);
+    const devoir = devoirs.find((d) => d.id === id);
+    if (!devoir) return;
+    const nowCompleted = !devoir.completed;
+    const updatedDevoirs = devoirs.map((d) => (d.id === id ? { ...d, completed: nowCompleted } : d));
+    setDevoirs(updatedDevoirs);
+    saveDevoirs(updatedDevoirs);
+
+    if (nowCompleted) {
+      const streakStats = updateStreak(getGameStats());
+      const newStats: GameStats = {
+        ...streakStats,
+        coins: streakStats.coins + 10,
+        totalCompleted: streakStats.totalCompleted + 1,
+      };
+      saveGameStats(newStats);
+      setStats(newStats);
+
+      const cartableCompletions = parseInt(
+        localStorage.getItem("alma_cartable_completions") ?? "0",
+        10
+      );
+      const currentBadges = getBadges();
+      const { updatedBadges, newlyUnlocked } = checkAndUnlockBadges(
+        newStats,
+        updatedDevoirs,
+        currentBadges,
+        cartableCompletions
+      );
+      saveBadges(updatedBadges);
+      setBadges(updatedBadges);
+      if (newlyUnlocked.length > 0) {
+        setCelebrating(true);
+        setBadgeToast(newlyUnlocked[0]);
+        setTimeout(() => {
+          setCelebrating(false);
+          setBadgeToast(null);
+        }, 3000);
+      }
+    } else {
+      const rawStats = getGameStats();
+      const newStats: GameStats = {
+        ...rawStats,
+        coins: Math.max(0, rawStats.coins - 10),
+      };
+      saveGameStats(newStats);
+      setStats(newStats);
+    }
   };
 
-  const badgeSlots = [
-    ...badges.slice(0, 3),
-    ...Array(Math.max(0, 3 - badges.length)).fill("???"),
+  const unlockedBadges = badges.filter((b) => b.unlocked);
+  const badgeSlots: (Badge | null)[] = [
+    ...unlockedBadges.slice(0, 3),
+    ...Array<null>(Math.max(0, 3 - unlockedBadges.length)).fill(null),
   ].slice(0, 3);
 
   if (!loaded) return null;
@@ -112,20 +168,15 @@ export default function HomePage() {
         </p>
         <p className="text-lg font-extrabold text-white mb-3">{getTodayFr()}</p>
 
-        <motion.div
-          className="text-6xl mb-3 inline-block"
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        >
-          🐱
-        </motion.div>
+        <div className="mb-3 inline-block">
+          <Mascotte state={mascotteState} />
+        </div>
 
         <div
           className="rounded-2xl py-2 px-4 text-sm font-semibold text-white w-fit mx-auto mb-3"
           style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}
         >
-          Tu as {devoirsAujourdhui.length} devoir
-          {devoirsAujourdhui.length !== 1 ? "s" : ""} aujourd&apos;hui !
+          {getMascotteMessage(mascotteState, devoirs)}
         </div>
 
         <div className="flex justify-center">
@@ -269,25 +320,46 @@ export default function HomePage() {
 
       {/* ── BADGES ── */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#f9a8d4" }}>
-          🏅 Mes badges
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "#f9a8d4" }}>
+            🏅 Mes badges
+          </h2>
+          <Link href="/badges" className="text-xs font-semibold" style={{ color: "#a78bfa" }}>
+            Voir tous →
+          </Link>
+        </div>
         <div className="flex gap-2 flex-wrap">
           {badgeSlots.map((badge, i) => (
             <span
               key={i}
               className="text-xs px-3 py-1.5 rounded-full font-semibold"
               style={
-                badge === "???"
+                !badge
                   ? { background: "rgba(255,255,255,0.08)", color: "#6b7280" }
                   : { background: "rgba(139,92,246,0.25)", color: "#e9d5ff" }
               }
             >
-              {badge}
+              {badge ? `${badge.emoji} ${badge.name}` : "🔒"}
             </span>
           ))}
         </div>
       </div>
+
+      {/* ── BADGE TOAST ── */}
+      <AnimatePresence>
+        {badgeToast && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white whitespace-nowrap shadow-lg"
+            style={{ background: "#1a0a35", border: "1px solid rgba(139,92,246,0.6)" }}
+          >
+            🏅 Nouveau badge : {badgeToast.emoji} {badgeToast.name} !
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

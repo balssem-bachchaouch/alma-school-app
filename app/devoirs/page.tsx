@@ -19,10 +19,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Devoir } from "@/lib/types";
-import { getDevoirs, saveDevoirs, addCoins, removeCoins, getGameStats, saveGameStats } from "@/lib/storage";
+import type { Devoir, Badge } from "@/lib/types";
+import { getDevoirs, saveDevoirs, addCoins, removeCoins, getGameStats, saveGameStats, getBadges, saveBadges } from "@/lib/storage";
 import { getMatiereConfig, MATIERES, DUREES } from "@/lib/constants";
 import { updateStreak } from "@/lib/streak";
+import { checkAndUnlockBadges } from "@/lib/badges";
 
 function getDateLabel(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
@@ -49,6 +50,7 @@ export default function DevoirsPage() {
   const [editing, setEditing] = useState<Devoir | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [coinToast, setCoinToast] = useState<string | null>(null);
+  const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
 
   useEffect(() => {
     setDevoirs(getDevoirs());
@@ -96,13 +98,20 @@ export default function DevoirsPage() {
     persist(updated);
 
     if (nowCompleted) {
-      addCoins(10);
-      // Update totalCompleted and streak
-      const stats = updateStreak(getGameStats());
-      saveGameStats({ ...stats, totalCompleted: stats.totalCompleted + 1 });
-      // Show coin toast
+      const streakStats = updateStreak(getGameStats());
+      const newStats = { ...streakStats, coins: streakStats.coins + 10, totalCompleted: streakStats.totalCompleted + 1 };
+      saveGameStats(newStats);
       setCoinToast(id);
       setTimeout(() => setCoinToast(null), 1100);
+
+      const cartableCompletions = parseInt(localStorage.getItem("alma_cartable_completions") ?? "0", 10);
+      const currentBadges = getBadges();
+      const { updatedBadges, newlyUnlocked } = checkAndUnlockBadges(newStats, updated, currentBadges, cartableCompletions);
+      saveBadges(updatedBadges);
+      if (newlyUnlocked.length > 0) {
+        setBadgeToast(newlyUnlocked[0]);
+        setTimeout(() => setBadgeToast(null), 3000);
+      }
     } else {
       removeCoins(10);
     }
@@ -211,6 +220,22 @@ export default function DevoirsPage() {
           </div>
         </div>
       ))}
+
+      {/* ── BADGE TOAST ── */}
+      <AnimatePresence>
+        {badgeToast && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white whitespace-nowrap shadow-lg"
+            style={{ background: "#1a0a35", border: "1px solid rgba(139,92,246,0.6)" }}
+          >
+            🏅 Nouveau badge : {badgeToast.emoji} {badgeToast.name} !
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">

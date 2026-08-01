@@ -29,3 +29,12 @@ export interface GameStats {
   lastActiveDate: string;
   streak: number;
 }
+
+export interface Badge {
+  id: string;
+  emoji: string;
+  name: string;
+  description: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+}

@@ -1,4 +1,5 @@
-import type { Devoir, PlanningSlot, CartableItem, GameStats } from "./types";
+import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge } from "./types";
+import { BADGES_CONFIG } from "./badges";
 
 export function get<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -113,4 +114,31 @@ export function addCoins(amount: number): void {
 export function removeCoins(amount: number): void {
   const stats = getGameStats();
   saveGameStats({ ...stats, coins: Math.max(0, stats.coins - amount) });
+}
+
+const BADGES_KEY = "alma_badges";
+
+function initialBadges(): Badge[] {
+  return BADGES_CONFIG.map((b) => ({ ...b, unlocked: false }));
+}
+
+export function getBadges(): Badge[] {
+  const stored = get<Badge[] | null>(BADGES_KEY, null);
+  if (!stored || stored.length === 0 || typeof stored[0]?.unlocked !== "boolean") {
+    const initial = initialBadges();
+    set(BADGES_KEY, initial);
+    return initial;
+  }
+  const ids = new Set(stored.map((b) => b.id));
+  const missing = BADGES_CONFIG.filter((c) => !ids.has(c.id)).map((c) => ({ ...c, unlocked: false }));
+  if (missing.length > 0) {
+    const merged = [...stored, ...missing];
+    set(BADGES_KEY, merged);
+    return merged;
+  }
+  return stored;
+}
+
+export function saveBadges(badges: Badge[]): void {
+  set(BADGES_KEY, badges);
 }
