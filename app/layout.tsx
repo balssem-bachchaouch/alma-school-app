@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import StarField from "@/components/StarField";
+import RegisterSW from "@/components/RegisterSW";
+import InstallPWA from "@/components/InstallPWA";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,10 +23,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={inter.variable}>
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#8b5cf6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="ALMA" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body className="min-h-screen font-[family-name:var(--font-inter)]">
+        <RegisterSW />
         <StarField />
         <main className="relative z-10 pb-28">{children}</main>
         <BottomNav />
+        <InstallPWA />
       </body>
     </html>
   );
