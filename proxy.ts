@@ -7,6 +7,7 @@ const { auth } = NextAuth(authConfig);
 export const proxy = auth as any;
 
 export const config = {
-  // Exclude auth pages from proxy so they render without a NEXTAUTH_SECRET check
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|register).*)"],
+  matcher: [
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png|sw.js|manifest.webmanifest|.*\\.png$|.*\\.js$|login|register).*)",
+  ],
 };
