@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { loginAction } from "@/app/actions/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,14 +16,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    const err = await loginAction(email, password);
     setLoading(false);
-    if (result?.error) {
-      setError("Email ou mot de passe incorrect");
+    if (err) {
+      setError(err);
     } else {
       router.push("/");
       router.refresh();
@@ -60,7 +56,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="test@local.dev"
+              placeholder="alma@test.com"
               className="rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-violet-500"
               style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(139,92,246,0.3)" }}
             />
