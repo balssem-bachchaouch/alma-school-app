@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Circle } from "lucide-react";
 import type { Devoir, GameStats, Badge } from "@/lib/types";
 import {
-  getDevoirs,
-  saveDevoirs,
   getGameStats,
   saveGameStats,
   getBadges,
@@ -43,6 +41,7 @@ function streakLabel(streak: number): string {
 
 export default function HomePage() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
+  const [devoirsLoading, setDevoirsLoading] = useState(true);
   const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
   const [badges, setBadges] = useState<Badge[]>([]);
   const [celebrating, setCelebrating] = useState(false);
@@ -53,13 +52,19 @@ export default function HomePage() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    setDevoirs(getDevoirs());
+
     const rawStats = getGameStats();
     const updated = updateStreak(rawStats);
     saveGameStats(updated);
     setStats(updated);
     setBadges(getBadges());
     setLoaded(true);
+
+    fetch("/api/devoirs")
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: Devoir[]) => setDevoirs(data))
+      .catch(() => {})
+      .finally(() => setDevoirsLoading(false));
   }, []);
 
   const today = todayStr();
@@ -71,13 +76,18 @@ export default function HomePage() {
 
   const mascotteState = getMascotteState(stats, devoirs, celebrating);
 
-  const toggle = (id: string) => {
+  const toggle = async (id: string) => {
     const devoir = devoirs.find((d) => d.id === id);
     if (!devoir) return;
     const nowCompleted = !devoir.completed;
     const updatedDevoirs = devoirs.map((d) => (d.id === id ? { ...d, completed: nowCompleted } : d));
     setDevoirs(updatedDevoirs);
-    saveDevoirs(updatedDevoirs);
+
+    fetch(`/api/devoirs/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: nowCompleted }),
+    });
 
     if (nowCompleted) {
       const streakStats = updateStreak(getGameStats());
@@ -246,7 +256,11 @@ export default function HomePage() {
         <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           📖 Aujourd&apos;hui
         </h2>
-        {devoirsAujourdhui.length === 0 ? (
+        {devoirsLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="w-6 h-6 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
+          </div>
+        ) : devoirsAujourdhui.length === 0 ? (
           <p className="text-center py-3 text-sm" style={{ color: "#6d28d9" }}>Aucun devoir 🎉</p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -292,7 +306,11 @@ export default function HomePage() {
         <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           🌙 Demain
         </h2>
-        {devoirsDemain.length === 0 ? (
+        {devoirsLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="w-6 h-6 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
+          </div>
+        ) : devoirsDemain.length === 0 ? (
           <p className="text-center py-3 text-sm" style={{ color: "#6d28d9" }}>Aucun devoir pour demain</p>
         ) : (
           <div className="flex flex-col gap-2">

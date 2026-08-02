@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PlanningSlot } from "@/lib/types";
-import { getPlanningSlots, savePlanningSlots } from "@/lib/storage";
 import { SLOT_COLORS, CATEGORIES_PLANNING, DAYS_FULL } from "@/lib/constants";
 
 const getTodayDay = () => (new Date().getDay() + 6) % 7;
@@ -35,21 +34,28 @@ const EMPTY_FORM = {
 
 export default function PlanningPage() {
   const [slots, setSlots] = useState<PlanningSlot[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PlanningSlot | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const todayDay = getTodayDay();
 
-  useEffect(() => {
-    setSlots(getPlanningSlots());
-    setLoaded(true);
-  }, []);
-
-  const persist = (updated: PlanningSlot[]) => {
-    setSlots(updated);
-    savePlanningSlots(updated);
+  const loadSlots = async () => {
+    try {
+      const res = await fetch("/api/planning");
+      if (!res.ok) throw new Error("Erreur de chargement");
+      const data: PlanningSlot[] = await res.json();
+      setSlots(data);
+      setError(null);
+    } catch {
+      setError("Impossible de charger le planning");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => { loadSlots(); }, []);
 
   const openAdd = () => {
     setEditing(null);
@@ -71,11 +77,11 @@ export default function PlanningPage() {
     setOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.titre || !form.categorie) return;
     const colorClasses =
       SLOT_COLORS.find((c) => c.key === form.colorKey)?.classes ?? SLOT_COLORS[0].classes;
-    const data: Omit<PlanningSlot, "id"> = {
+    const payload = {
       titre: form.titre,
       categorie: form.categorie,
       day: Number(form.day),
@@ -83,20 +89,36 @@ export default function PlanningPage() {
       endTime: form.endTime,
       colorClass: colorClasses,
     };
+
     if (editing) {
-      persist(slots.map((s) => (s.id === editing.id ? { ...s, ...data } : s)));
+      const res = await fetch(`/api/planning/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const updated: PlanningSlot = await res.json();
+        setSlots((prev) => prev.map((s) => (s.id === editing.id ? updated : s)));
+      }
     } else {
-      persist([...slots, { id: crypto.randomUUID(), ...data }]);
+      const res = await fetch("/api/planning", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const created: PlanningSlot = await res.json();
+        setSlots((prev) => [...prev, created]);
+      }
     }
     setOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm("Supprimer ce créneau ?")) return;
-    persist(slots.filter((s) => s.id !== id));
+    const res = await fetch(`/api/planning/${id}`, { method: "DELETE" });
+    if (res.ok) setSlots((prev) => prev.filter((s) => s.id !== id));
   };
-
-  if (!loaded) return null;
 
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
@@ -112,72 +134,93 @@ export default function PlanningPage() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {DAYS_FULL.map((day, i) => {
-          const daySlots = slots.filter((s) => s.day === i);
-          const isToday = i === todayDay;
-          return (
-            <div
-              key={day}
-              className="rounded-3xl p-4"
-              style={{
-                background: "#ffffff",
-                border: isToday
-                  ? "1px solid rgba(236,72,153,0.5)"
-                  : "1px solid rgba(139,92,246,0.2)",
-                boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
-              }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="font-bold" style={{ color: "#3b0764" }}>{day}</h2>
-                {isToday && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
-                    style={{ background: "linear-gradient(90deg, #ec4899, #7c3aed)" }}
-                  >
-                    Aujourd&apos;hui
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                {daySlots.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className={`rounded-2xl px-4 py-3 border ${slot.colorClass} flex items-center justify-between`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-sm">{slot.titre}</span>
-                      <span className="text-xs opacity-70">
-                        {slot.startTime} – {slot.endTime}
-                      </span>
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="text-center py-8">
+          <p className="text-red-500 text-sm mb-3">{error}</p>
+          <button
+            onClick={loadSlots}
+            className="text-sm px-4 py-2 rounded-2xl text-white font-semibold"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className="flex flex-col gap-4">
+          {DAYS_FULL.map((day, i) => {
+            const daySlots = slots.filter((s) => s.day === i);
+            const isToday = i === todayDay;
+            return (
+              <div
+                key={day}
+                className="rounded-3xl p-4"
+                style={{
+                  background: "#ffffff",
+                  border: isToday
+                    ? "1px solid rgba(236,72,153,0.5)"
+                    : "1px solid rgba(139,92,246,0.2)",
+                  boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold" style={{ color: "#3b0764" }}>{day}</h2>
+                  {isToday && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+                      style={{ background: "linear-gradient(90deg, #ec4899, #7c3aed)" }}
+                    >
+                      Aujourd&apos;hui
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {daySlots.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className={`rounded-2xl px-4 py-3 border ${slot.colorClass} flex items-center justify-between`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">{slot.titre}</span>
+                        <span className="text-xs opacity-70">
+                          {slot.startTime} – {slot.endTime}
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => openEdit(slot)}
+                          className="p-1.5 rounded-xl active:scale-90 transition-transform"
+                          style={{ color: "#7c3aed" }}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(slot.id)}
+                          className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => openEdit(slot)}
-                        className="p-1.5 rounded-xl active:scale-90 transition-transform"
-                        style={{ color: "#7c3aed" }}
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(slot.id)}
-                        className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {daySlots.length === 0 && (
-                  <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
-                    Aucun cours
-                  </p>
-                )}
+                  ))}
+                  {daySlots.length === 0 && (
+                    <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
+                      Aucun cours
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">

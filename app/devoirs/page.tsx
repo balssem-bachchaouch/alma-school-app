@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Devoir, Badge } from "@/lib/types";
-import { getDevoirs, saveDevoirs, getGameStats, saveGameStats, getBadges, saveBadges } from "@/lib/storage";
+import { getGameStats, saveGameStats, getBadges, saveBadges } from "@/lib/storage";
 import { getMatiereConfig, MATIERES, DUREES } from "@/lib/constants";
 import { updateStreak } from "@/lib/streak";
 import { checkAndUnlockBadges } from "@/lib/badges";
@@ -51,22 +51,29 @@ const CARD = {
 
 export default function DevoirsPage() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Devoir | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [coinToast, setCoinToast] = useState<string | null>(null);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
 
-  useEffect(() => {
-    setDevoirs(getDevoirs());
-    setLoaded(true);
-  }, []);
-
-  const persist = (updated: Devoir[]) => {
-    setDevoirs(updated);
-    saveDevoirs(updated);
+  const loadDevoirs = async () => {
+    try {
+      const res = await fetch("/api/devoirs");
+      if (!res.ok) throw new Error("Erreur de chargement");
+      const data: Devoir[] = await res.json();
+      setDevoirs(data);
+      setError(null);
+    } catch {
+      setError("Impossible de charger les devoirs");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => { loadDevoirs(); }, []);
 
   const openAdd = () => {
     setEditing(null);
@@ -80,28 +87,52 @@ export default function DevoirsPage() {
     setOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.matiere || !form.titre || !form.dueDate) return;
+
     if (editing) {
-      persist(devoirs.map((d) => (d.id === editing.id ? { ...d, ...form } : d)));
+      const res = await fetch(`/api/devoirs/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated: Devoir = await res.json();
+        setDevoirs((prev) => prev.map((d) => (d.id === editing.id ? updated : d)));
+      }
     } else {
-      persist([...devoirs, { id: crypto.randomUUID(), ...form, completed: false }]);
+      const res = await fetch("/api/devoirs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const created: Devoir = await res.json();
+        setDevoirs((prev) => [...prev, created]);
+      }
     }
     setOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm("Supprimer ce devoir ?")) return;
-    persist(devoirs.filter((d) => d.id !== id));
+    const res = await fetch(`/api/devoirs/${id}`, { method: "DELETE" });
+    if (res.ok) setDevoirs((prev) => prev.filter((d) => d.id !== id));
   };
 
-  const toggle = (id: string) => {
+  const toggle = async (id: string) => {
     const devoir = devoirs.find((d) => d.id === id);
     if (!devoir) return;
 
     const nowCompleted = !devoir.completed;
     const updated = devoirs.map((d) => (d.id === id ? { ...d, completed: nowCompleted } : d));
-    persist(updated);
+    setDevoirs(updated);
+
+    fetch(`/api/devoirs/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: nowCompleted }),
+    });
 
     if (nowCompleted) {
       const streakStats = updateStreak(getGameStats());
@@ -123,8 +154,6 @@ export default function DevoirsPage() {
       saveGameStats({ ...stats, coins: Math.max(0, stats.coins - 10) });
     }
   };
-
-  if (!loaded) return null;
 
   const groups = devoirs.reduce<Record<string, Devoir[]>>((acc, d) => {
     const label = getDateLabel(d.dueDate);
@@ -155,11 +184,30 @@ export default function DevoirsPage() {
         </button>
       </div>
 
-      {sortedGroups.length === 0 && (
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="text-center py-8">
+          <p className="text-red-500 text-sm mb-3">{error}</p>
+          <button
+            onClick={loadDevoirs}
+            className="text-sm px-4 py-2 rounded-2xl text-white font-semibold"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && sortedGroups.length === 0 && (
         <p className="text-center mt-16 text-lg" style={{ color: "#7c3aed" }}>Aucun devoir 🎉</p>
       )}
 
-      {sortedGroups.map(([label, items]) => (
+      {!loading && !error && sortedGroups.map(([label, items]) => (
         <div key={label} className="mb-6">
           <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#3b0764" }}>
             {label}

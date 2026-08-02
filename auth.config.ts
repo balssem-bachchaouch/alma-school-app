@@ -12,6 +12,10 @@ export const authConfig: NextAuthConfig = {
       if (isAuthPage) return isLoggedIn ? Response.redirect(new URL("/", nextUrl)) : true;
       return isLoggedIn;
     },
+    session({ session, token }) {
+      if (token.sub) session.user.id = token.sub;
+      return session;
+    },
   },
   providers: [],
 };

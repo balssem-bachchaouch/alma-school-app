@@ -99,3 +99,31 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const devoirs = pgTable("devoirs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  matiere: text("matiere").notNull(),
+  titre: text("titre").notNull(),
+  description: text("description"),
+  dueDate: text("due_date").notNull(),
+  duree: text("duree").notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const planningSlots = pgTable("planning_slots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  titre: text("titre").notNull(),
+  categorie: text("categorie").notNull(),
+  day: integer("day").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  colorClass: text("color_class").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
