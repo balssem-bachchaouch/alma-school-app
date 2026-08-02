@@ -61,5 +61,6 @@ export interface CoursParticulier {
   montant: number;
   devise: string;
   seancesParCycle: number;
+  jours?: number[]; // 0=Lundi … 6=Dimanche
   cycles: CoursCycle[];
 }

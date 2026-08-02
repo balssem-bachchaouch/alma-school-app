@@ -24,6 +24,8 @@ import { getCours, saveCours } from "@/lib/storage";
 
 const MATIERES = ["Mathématiques", "Français", "Arabe", "Anglais", "Autre"];
 const DEVISES = ["DT", "€", "$"];
+const JOURS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const JOURS_FULL = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -35,18 +37,32 @@ function formatDate(dateStr?: string): string {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
+// JS getDay: 0=Sun,1=Mon…6=Sat → jours: 0=Lun…6=Dim
+function jsToJours(jsDay: number): number {
+  return (jsDay + 6) % 7;
+}
+
+// Returns the most recent past occurrence (inclusive of today) of any day in jours
+function mostRecentFixedDay(jours: number[]): string {
+  if (!jours || jours.length === 0) return todayStr();
+  const now = new Date();
+  for (let i = 0; i <= 6; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    if (jours.includes(jsToJours(d.getDay()))) {
+      return d.toISOString().split("T")[0];
+    }
+  }
+  return todayStr();
+}
+
 function createCycle(seancesParCycle: number, dateDebut: string): CoursCycle {
   const seances: CoursSeance[] = Array.from({ length: seancesParCycle }, (_, i) => ({
     id: crypto.randomUUID(),
     numero: i + 1,
     done: false,
   }));
-  return {
-    id: crypto.randomUUID(),
-    dateDebut,
-    paid: false,
-    seances,
-  };
+  return { id: crypto.randomUUID(), dateDebut, paid: false, seances };
 }
 
 type FormState = {
@@ -55,6 +71,7 @@ type FormState = {
   montant: string;
   devise: string;
   seancesParCycle: string;
+  jours: number[];
 };
 
 const DEFAULT_FORM: FormState = {
@@ -63,7 +80,53 @@ const DEFAULT_FORM: FormState = {
   montant: "",
   devise: "DT",
   seancesParCycle: "12",
+  jours: [],
 };
+
+type SeanceDialogState = {
+  coursId: string;
+  cycleId: string;
+  seanceId: string;
+  date: string;
+};
+
+function JoursToggle({
+  jours,
+  onToggle,
+}: {
+  jours: number[];
+  onToggle: (idx: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label style={{ color: "#3b0764" }}>Jours du cours</Label>
+      <div className="flex gap-1.5 flex-wrap">
+        {JOURS_SHORT.map((label, idx) => {
+          const selected = jours.includes(idx);
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onToggle(idx)}
+              className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-90"
+              style={
+                selected
+                  ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#ffffff" }
+                  : {
+                      background: "rgba(124,58,237,0.08)",
+                      color: "#6d28d9",
+                      border: "1px solid rgba(124,58,237,0.2)",
+                    }
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function CoursPage() {
   const [cours, setCours] = useState<CoursParticulier[]>([]);
@@ -74,6 +137,7 @@ export default function CoursPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const [seanceDialog, setSeanceDialog] = useState<SeanceDialogState | null>(null);
 
   useEffect(() => {
     setCours(getCours());
@@ -83,6 +147,13 @@ export default function CoursPage() {
   const save = (next: CoursParticulier[]) => {
     setCours(next);
     saveCours(next);
+  };
+
+  const toggleJour = (idx: number) => {
+    setForm((f) => ({
+      ...f,
+      jours: f.jours.includes(idx) ? f.jours.filter((j) => j !== idx) : [...f.jours, idx],
+    }));
   };
 
   const handleAdd = () => {
@@ -95,6 +166,7 @@ export default function CoursPage() {
       montant: parseFloat(form.montant),
       devise: form.devise,
       seancesParCycle: seancesN,
+      jours: form.jours,
       cycles: [createCycle(seancesN, todayStr())],
     };
     save([...cours, newCours]);
@@ -110,6 +182,7 @@ export default function CoursPage() {
       montant: String(c.montant),
       devise: c.devise,
       seancesParCycle: String(c.seancesParCycle),
+      jours: Array.isArray(c.jours) ? c.jours : [],
     });
     setEditOpen(true);
   };
@@ -119,7 +192,14 @@ export default function CoursPage() {
     save(
       cours.map((c) =>
         c.id === editingId
-          ? { ...c, nom: form.nom, matiere: form.matiere, montant: parseFloat(form.montant), devise: form.devise }
+          ? {
+              ...c,
+              nom: form.nom,
+              matiere: form.matiere,
+              montant: parseFloat(form.montant),
+              devise: form.devise,
+              jours: form.jours,
+            }
           : c
       )
     );
@@ -133,7 +213,13 @@ export default function CoursPage() {
     if (expandedId === id) setExpandedId(null);
   };
 
-  const toggleSeance = (coursId: string, cycleId: string, seanceId: string) => {
+  const applySeance = (
+    coursId: string,
+    cycleId: string,
+    seanceId: string,
+    done: boolean,
+    date?: string
+  ) => {
     save(
       cours.map((c) => {
         if (c.id !== coursId) return c;
@@ -145,14 +231,42 @@ export default function CoursPage() {
               ...cy,
               seances: cy.seances.map((s) => {
                 if (s.id !== seanceId) return s;
-                const nowDone = !s.done;
-                return { ...s, done: nowDone, date: nowDone ? todayStr() : undefined };
+                return { ...s, done, date: done ? (date ?? todayStr()) : undefined };
               }),
             };
           }),
         };
       })
     );
+  };
+
+  const handleSeanceClick = (c: CoursParticulier, cycleId: string, seanceId: string) => {
+    const seance = c.cycles
+      .find((cy) => cy.id === cycleId)
+      ?.seances.find((s) => s.id === seanceId);
+    if (!seance) return;
+    if (seance.done) {
+      applySeance(c.id, cycleId, seanceId, false);
+    } else {
+      setSeanceDialog({
+        coursId: c.id,
+        cycleId,
+        seanceId,
+        date: mostRecentFixedDay(Array.isArray(c.jours) ? c.jours : []),
+      });
+    }
+  };
+
+  const confirmSeance = () => {
+    if (!seanceDialog) return;
+    applySeance(
+      seanceDialog.coursId,
+      seanceDialog.cycleId,
+      seanceDialog.seanceId,
+      true,
+      seanceDialog.date
+    );
+    setSeanceDialog(null);
   };
 
   const markPaid = (coursId: string) => {
@@ -196,7 +310,11 @@ export default function CoursPage() {
       {cours.length === 0 && (
         <div
           className="rounded-3xl p-8 text-center"
-          style={{ background: "#ffffff", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 2px 12px rgba(124,58,237,0.08)" }}
+          style={{
+            background: "#ffffff",
+            border: "1px solid rgba(139,92,246,0.2)",
+            boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+          }}
         >
           <div className="text-4xl mb-3">📚</div>
           <p className="font-semibold text-base mb-1" style={{ color: "#3b0764" }}>
@@ -218,6 +336,7 @@ export default function CoursPage() {
           const remaining = total - doneCount;
           const isComplete = doneCount === total;
           const isExpanded = expandedId === c.id;
+          const jours = Array.isArray(c.jours) ? c.jours : [];
 
           return (
             <div
@@ -266,6 +385,11 @@ export default function CoursPage() {
                         {c.matiere}
                       </span>
                     </div>
+                    {jours.length > 0 && (
+                      <p className="text-xs font-medium mb-1" style={{ color: "#7c3aed" }}>
+                        📅 {jours.map((j) => JOURS_FULL[j]).join(" · ")}
+                      </p>
+                    )}
                     <div className="text-xs font-semibold" style={{ color: "#6d28d9" }}>
                       Cycle {c.cycles.length} — {c.montant} {c.devise}
                     </div>
@@ -305,9 +429,14 @@ export default function CoursPage() {
                     <span className="text-xs font-semibold" style={{ color: "#3b0764" }}>
                       Séance {doneCount}/{total}
                     </span>
-                    <span className="text-xs font-bold" style={{ color: "#7c3aed" }}>{pct}%</span>
+                    <span className="text-xs font-bold" style={{ color: "#7c3aed" }}>
+                      {pct}%
+                    </span>
                   </div>
-                  <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.1)" }}>
+                  <div
+                    className="h-2.5 rounded-full overflow-hidden"
+                    style={{ background: "rgba(124,58,237,0.1)" }}
+                  >
                     <motion.div
                       className="h-full rounded-full"
                       style={{ background: "linear-gradient(90deg, #7c3aed, #ec4899)" }}
@@ -352,7 +481,7 @@ export default function CoursPage() {
                         {currentCycle.seances.map((s) => (
                           <button
                             key={s.id}
-                            onClick={() => toggleSeance(c.id, currentCycle.id, s.id)}
+                            onClick={() => handleSeanceClick(c, currentCycle.id, s.id)}
                             className="flex items-center gap-3 py-1.5 px-1 rounded-xl text-left active:scale-95 transition-transform"
                           >
                             <span className="text-base leading-none">{s.done ? "✅" : "⬜"}</span>
@@ -362,7 +491,10 @@ export default function CoursPage() {
                             >
                               Séance {s.numero}
                               {s.date && (
-                                <span className="font-normal text-xs ml-1.5" style={{ color: "#6d28d9" }}>
+                                <span
+                                  className="font-normal text-xs ml-1.5"
+                                  style={{ color: "#6d28d9" }}
+                                >
                                   — {formatDate(s.date)}
                                 </span>
                               )}
@@ -402,9 +534,9 @@ export default function CoursPage() {
         })}
       </div>
 
-      {/* Add Dialog */}
+      {/* ── Add Dialog ── */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="rounded-3xl mx-4 max-w-sm">
+        <DialogContent className="rounded-3xl mx-4 max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle style={{ color: "#3b0764" }}>Nouveau cours particulier</DialogTitle>
           </DialogHeader>
@@ -429,7 +561,9 @@ export default function CoursPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {MATIERES.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -456,7 +590,9 @@ export default function CoursPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {DEVISES.map((d) => (
-                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -472,10 +608,14 @@ export default function CoursPage() {
                 onChange={(e) => setForm((f) => ({ ...f, seancesParCycle: e.target.value }))}
               />
             </div>
+            <JoursToggle jours={form.jours} onToggle={toggleJour} />
           </div>
           <DialogFooter className="gap-2">
             <button
-              onClick={() => { setAddOpen(false); setForm(DEFAULT_FORM); }}
+              onClick={() => {
+                setAddOpen(false);
+                setForm(DEFAULT_FORM);
+              }}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
               style={{ color: "#7c3aed" }}
             >
@@ -493,9 +633,17 @@ export default function CoursPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={(open) => { if (!open) { setEditOpen(false); setEditingId(null); } }}>
-        <DialogContent className="rounded-3xl mx-4 max-w-sm">
+      {/* ── Edit Dialog ── */}
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditOpen(false);
+            setEditingId(null);
+          }
+        }}
+      >
+        <DialogContent className="rounded-3xl mx-4 max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle style={{ color: "#3b0764" }}>Modifier le cours</DialogTitle>
           </DialogHeader>
@@ -519,7 +667,9 @@ export default function CoursPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {MATIERES.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -545,16 +695,22 @@ export default function CoursPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {DEVISES.map((d) => (
-                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
+            <JoursToggle jours={form.jours} onToggle={toggleJour} />
           </div>
           <DialogFooter className="gap-2">
             <button
-              onClick={() => { setEditOpen(false); setEditingId(null); }}
+              onClick={() => {
+                setEditOpen(false);
+                setEditingId(null);
+              }}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
               style={{ color: "#7c3aed" }}
             >
@@ -572,10 +728,12 @@ export default function CoursPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
+      {/* ── Delete confirm ── */}
       <Dialog
         open={deleteConfirmId !== null}
-        onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmId(null);
+        }}
       >
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
@@ -593,11 +751,56 @@ export default function CoursPage() {
               Annuler
             </button>
             <button
-              onClick={() => { if (deleteConfirmId) handleDelete(deleteConfirmId); }}
+              onClick={() => {
+                if (deleteConfirmId) handleDelete(deleteConfirmId);
+              }}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm"
               style={{ background: "#dc2626" }}
             >
               Supprimer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Séance completion dialog ── */}
+      <Dialog
+        open={seanceDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setSeanceDialog(null);
+        }}
+      >
+        <DialogContent className="rounded-3xl mx-4 max-w-xs">
+          <DialogHeader>
+            <DialogTitle style={{ color: "#3b0764" }}>Date de la séance</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Label style={{ color: "#3b0764" }}>Date</Label>
+            <Input
+              className="rounded-2xl"
+              type="date"
+              value={seanceDialog?.date ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSeanceDialog((d) => (d ? { ...d, date: val } : d));
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <button
+              onClick={() => setSeanceDialog(null)}
+              className="px-4 py-2 rounded-2xl font-semibold text-sm"
+              style={{ color: "#7c3aed" }}
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmSeance}
+              disabled={!seanceDialog?.date}
+              className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+            >
+              Confirmer ✅
             </button>
           </DialogFooter>
         </DialogContent>
