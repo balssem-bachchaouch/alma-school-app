@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle2, Circle } from "lucide-react";
+import { Clock, CheckCircle2, Circle, LogOut } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import type { Devoir, GameStats, Badge } from "@/lib/types";
 import {
   getGameStats,
@@ -40,6 +41,7 @@ function streakLabel(streak: number): string {
 }
 
 export default function HomePage() {
+  const { data: session } = useSession();
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [devoirsLoading, setDevoirsLoading] = useState(true);
   const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
@@ -145,11 +147,21 @@ export default function HomePage() {
         <span className="text-xs font-bold tracking-widest" style={{ color: "#7c3aed" }}>
           ALMA
         </span>
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-base"
-          style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)" }}
-        >
-          👧
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-base"
+            style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)" }}
+          >
+            👧
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="flex items-center justify-center w-8 h-8 rounded-full active:scale-90 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+            title="Déconnexion"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </div>
 
@@ -161,9 +173,14 @@ export default function HomePage() {
           padding: "16px",
         }}
       >
-        <p className="text-xs font-bold uppercase tracking-widest mb-1 text-white/80">
+        <p className="text-xs font-bold uppercase tracking-widest mb-0.5 text-white/80">
           Bonjour ALMA 👋
         </p>
+        {session?.user && (
+          <p className="text-xs text-white/60 mb-1">
+            {session.user.name ?? session.user.email}
+          </p>
+        )}
         <p className="text-lg font-extrabold text-white mb-3">{getTodayFr()}</p>
 
         <div className="mb-3 inline-block">

@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import StarField from "@/components/StarField";
 import RegisterSW from "@/components/RegisterSW";
 import InstallPWA from "@/components/InstallPWA";
+import Providers from "@/components/Providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,11 +33,13 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="min-h-screen font-[family-name:var(--font-inter)]">
-        <RegisterSW />
-        <StarField />
-        <main className="relative z-10 pb-28">{children}</main>
-        <BottomNav />
-        <InstallPWA />
+        <Providers>
+          <RegisterSW />
+          <StarField />
+          <main className="relative z-10 pb-28">{children}</main>
+          <BottomNav />
+          <InstallPWA />
+        </Providers>
       </body>
     </html>
   );
