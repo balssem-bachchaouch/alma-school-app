@@ -1,4 +1,4 @@
-import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge } from "./types";
+import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge, CoursParticulier } from "./types";
 import { BADGES_CONFIG } from "./badges";
 
 export function get<T>(key: string, fallback: T): T {
@@ -141,4 +141,12 @@ export function getBadges(): Badge[] {
 
 export function saveBadges(badges: Badge[]): void {
   set(BADGES_KEY, badges);
+}
+
+export function getCours(): CoursParticulier[] {
+  return get<CoursParticulier[]>("alma_cours", []);
+}
+
+export function saveCours(cours: CoursParticulier[]): void {
+  set("alma_cours", cours);
 }

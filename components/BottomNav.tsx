@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Calendar, ShoppingBag } from "lucide-react";
+import { Home, BookOpen, Calendar, ShoppingBag, GraduationCap } from "lucide-react";
 
 const tabs = [
   { href: "/", icon: Home, label: "Accueil" },
   { href: "/devoirs", icon: BookOpen, label: "Devoirs" },
   { href: "/planning", icon: Calendar, label: "Planning" },
   { href: "/cartable", icon: ShoppingBag, label: "Cartable" },
+  { href: "/cours", icon: GraduationCap, label: "Cours" },
 ];
 
 export default function BottomNav() {
@@ -31,7 +32,7 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl transition-all"
+              className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all"
             >
               <div
                 className="p-2 rounded-2xl transition-all"

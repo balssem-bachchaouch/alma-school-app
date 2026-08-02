@@ -38,3 +38,28 @@ export interface Badge {
   unlocked: boolean;
   unlockedAt?: string;
 }
+
+export interface CoursSeance {
+  id: string;
+  numero: number;
+  date?: string;
+  done: boolean;
+}
+
+export interface CoursCycle {
+  id: string;
+  dateDebut: string;
+  datePaiement?: string;
+  paid: boolean;
+  seances: CoursSeance[];
+}
+
+export interface CoursParticulier {
+  id: string;
+  nom: string;
+  matiere: string;
+  montant: number;
+  devise: string;
+  seancesParCycle: number;
+  cycles: CoursCycle[];
+}
