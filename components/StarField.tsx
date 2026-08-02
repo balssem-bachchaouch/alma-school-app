@@ -30,7 +30,7 @@ export default function StarField() {
             width: s.size,
             height: s.size,
             borderRadius: "50%",
-            backgroundColor: "white",
+            backgroundColor: "rgba(255,255,255,0.9)",
             animation: `twinkle ${s.dur}s ${s.delay}s ease-in-out infinite`,
           }}
         />

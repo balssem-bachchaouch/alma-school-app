@@ -101,11 +101,11 @@ export default function PlanningPage() {
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-white">📅 Mon Planning</h1>
+        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📅 Mon Planning</h1>
         <button
           onClick={openAdd}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+          style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
         >
           <Plus size={16} />
           Ajouter
@@ -121,18 +121,19 @@ export default function PlanningPage() {
               key={day}
               className="rounded-3xl p-4"
               style={{
-                background: "rgba(255,255,255,0.07)",
+                background: "#ffffff",
                 border: isToday
                   ? "1px solid rgba(236,72,153,0.5)"
                   : "1px solid rgba(139,92,246,0.2)",
+                boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
               }}
             >
               <div className="flex items-center gap-2 mb-3">
-                <h2 className="font-bold text-white">{day}</h2>
+                <h2 className="font-bold" style={{ color: "#3b0764" }}>{day}</h2>
                 {isToday && (
                   <span
                     className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
-                    style={{ background: "linear-gradient(90deg, #ec4899, #8b5cf6)" }}
+                    style={{ background: "linear-gradient(90deg, #ec4899, #7c3aed)" }}
                   >
                     Aujourd&apos;hui
                   </span>
@@ -154,12 +155,13 @@ export default function PlanningPage() {
                       <button
                         onClick={() => openEdit(slot)}
                         className="p-1.5 rounded-xl active:scale-90 transition-transform"
+                        style={{ color: "#7c3aed" }}
                       >
                         <Pencil size={14} />
                       </button>
                       <button
                         onClick={() => handleDelete(slot.id)}
-                        className="p-1.5 rounded-xl active:scale-90 transition-transform"
+                        className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -167,7 +169,7 @@ export default function PlanningPage() {
                   </div>
                 ))}
                 {daySlots.length === 0 && (
-                  <p className="text-sm text-center py-2" style={{ color: "rgba(167,139,250,0.4)" }}>
+                  <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
                     Aucun cours
                   </p>
                 )}
@@ -180,13 +182,13 @@ export default function PlanningPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle style={{ color: "#3b0764" }}>
               {editing ? "Modifier le créneau" : "Ajouter un créneau"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Titre</Label>
+              <Label style={{ color: "#3b0764" }}>Titre</Label>
               <Input
                 className="rounded-2xl"
                 placeholder="Ex: Cours d'arabe"
@@ -195,7 +197,7 @@ export default function PlanningPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Catégorie</Label>
+              <Label style={{ color: "#3b0764" }}>Catégorie</Label>
               <Select
                 value={form.categorie}
                 onValueChange={(v) => setForm((f) => ({ ...f, categorie: v ?? f.categorie }))}
@@ -211,7 +213,7 @@ export default function PlanningPage() {
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Jour</Label>
+              <Label style={{ color: "#3b0764" }}>Jour</Label>
               <Select
                 value={form.day}
                 onValueChange={(v) => setForm((f) => ({ ...f, day: v ?? f.day }))}
@@ -228,7 +230,7 @@ export default function PlanningPage() {
             </div>
             <div className="flex gap-3">
               <div className="flex flex-col gap-1.5 flex-1">
-                <Label style={{ color: "#e9d5ff" }}>Début</Label>
+                <Label style={{ color: "#3b0764" }}>Début</Label>
                 <Input
                   type="time"
                   className="rounded-2xl"
@@ -237,7 +239,7 @@ export default function PlanningPage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5 flex-1">
-                <Label style={{ color: "#e9d5ff" }}>Fin</Label>
+                <Label style={{ color: "#3b0764" }}>Fin</Label>
                 <Input
                   type="time"
                   className="rounded-2xl"
@@ -247,7 +249,7 @@ export default function PlanningPage() {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Couleur</Label>
+              <Label style={{ color: "#3b0764" }}>Couleur</Label>
               <div className="flex gap-2">
                 {SLOT_COLORS.map((c) => (
                   <button
@@ -255,18 +257,18 @@ export default function PlanningPage() {
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, colorKey: c.key }))}
                     className={`w-8 h-8 rounded-full ${c.dot} transition-transform active:scale-90 ${
-                      form.colorKey === c.key ? "ring-2 ring-offset-2 ring-white/50 scale-110" : ""
+                      form.colorKey === c.key ? "ring-2 ring-offset-2 ring-violet-400 scale-110" : ""
                     }`}
                   />
                 ))}
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2 border-0 bg-transparent">
+          <DialogFooter className="gap-2">
             <button
               onClick={() => setOpen(false)}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
-              style={{ color: "#a78bfa" }}
+              style={{ color: "#7c3aed" }}
             >
               Annuler
             </button>
@@ -274,7 +276,7 @@ export default function PlanningPage() {
               onClick={handleSubmit}
               disabled={!form.titre || !form.categorie}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
             >
               {editing ? "Modifier" : "Ajouter"}
             </button>

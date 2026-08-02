@@ -20,8 +20,8 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: "#120535",
-        borderTop: "1px solid rgba(139,92,246,0.3)",
+        background: "#ffffff",
+        borderTop: "1px solid rgba(124,58,237,0.2)",
       }}
     >
       <div className="flex items-center justify-around px-2 py-1 max-w-md mx-auto">
@@ -32,21 +32,20 @@ export default function BottomNav() {
               key={href}
               href={href}
               className="flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl transition-all"
-              style={{ opacity: active ? 1 : 0.45 }}
             >
               <div
                 className="p-2 rounded-2xl transition-all"
-                style={active ? { background: "rgba(139,92,246,0.2)" } : undefined}
+                style={active ? { background: "#ede9fe" } : undefined}
               >
                 <Icon
                   size={22}
                   strokeWidth={active ? 2.5 : 1.8}
-                  style={{ color: active ? "#a78bfa" : "#6b7280" }}
+                  style={{ color: active ? "#7c3aed" : "#9ca3af" }}
                 />
               </div>
               <span
                 className="text-xs font-semibold"
-                style={{ color: active ? "#a78bfa" : "#6b7280" }}
+                style={{ color: active ? "#7c3aed" : "#9ca3af" }}
               >
                 {label}
               </span>

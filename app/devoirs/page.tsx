@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Devoir, Badge } from "@/lib/types";
-import { getDevoirs, saveDevoirs, addCoins, removeCoins, getGameStats, saveGameStats, getBadges, saveBadges } from "@/lib/storage";
+import { getDevoirs, saveDevoirs, getGameStats, saveGameStats, getBadges, saveBadges } from "@/lib/storage";
 import { getMatiereConfig, MATIERES, DUREES } from "@/lib/constants";
 import { updateStreak } from "@/lib/streak";
 import { checkAndUnlockBadges } from "@/lib/badges";
@@ -42,6 +42,12 @@ function getDateLabel(dateStr: string): string {
 
 const DATE_ORDER = ["Aujourd'hui", "Demain", "Après-demain"];
 const EMPTY_FORM = { matiere: "", titre: "", dueDate: "", duree: "30 min" };
+
+const CARD = {
+  background: "#ffffff",
+  border: "1px solid rgba(139,92,246,0.2)",
+  boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+};
 
 export default function DevoirsPage() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
@@ -113,7 +119,8 @@ export default function DevoirsPage() {
         setTimeout(() => setBadgeToast(null), 3000);
       }
     } else {
-      removeCoins(10);
+      const stats = getGameStats();
+      saveGameStats({ ...stats, coins: Math.max(0, stats.coins - 10) });
     }
   };
 
@@ -137,11 +144,11 @@ export default function DevoirsPage() {
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-white">📚 Mes Devoirs</h1>
+        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📚 Mes Devoirs</h1>
         <button
           onClick={openAdd}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+          style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
         >
           <Plus size={16} />
           Ajouter
@@ -149,12 +156,12 @@ export default function DevoirsPage() {
       </div>
 
       {sortedGroups.length === 0 && (
-        <p className="text-center mt-16 text-lg" style={{ color: "#a78bfa" }}>Aucun devoir 🎉</p>
+        <p className="text-center mt-16 text-lg" style={{ color: "#7c3aed" }}>Aucun devoir 🎉</p>
       )}
 
       {sortedGroups.map(([label, items]) => (
         <div key={label} className="mb-6">
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#f9a8d4" }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#3b0764" }}>
             {label}
           </h2>
           <div className="flex flex-col gap-3">
@@ -163,40 +170,40 @@ export default function DevoirsPage() {
               return (
                 <div
                   key={d.id}
-                  className={`relative rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-40" : ""}`}
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  className={`relative rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
+                  style={CARD}
                 >
                   <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
                       {d.matiere}
                     </span>
-                    <p className={`text-white font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`}>
+                    <p className={`font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`} style={{ color: "#3b0764" }}>
                       {d.titre}
                     </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <Clock size={12} style={{ color: "#a78bfa" }} />
-                      <span className="text-xs" style={{ color: "#a78bfa" }}>{d.duree}</span>
+                      <Clock size={12} style={{ color: "#6d28d9" }} />
+                      <span className="text-xs" style={{ color: "#6d28d9" }}>{d.duree}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0 relative">
                     <button
                       onClick={() => openEdit(d)}
                       className="p-1.5 rounded-xl active:scale-90 transition-transform"
-                      style={{ color: "#a78bfa" }}
+                      style={{ color: "#7c3aed" }}
                     >
                       <Pencil size={15} />
                     </button>
                     <button
                       onClick={() => handleDelete(d.id)}
-                      className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-400"
+                      className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
                     >
                       <Trash2 size={15} />
                     </button>
                     <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative">
                       {d.completed
-                        ? <CheckCircle2 size={28} className="text-green-400" />
-                        : <Circle size={28} style={{ color: "rgba(255,255,255,0.3)" }} />}
+                        ? <CheckCircle2 size={28} className="text-green-500" />
+                        : <Circle size={28} style={{ color: "rgba(124,58,237,0.3)" }} />}
                       <AnimatePresence>
                         {coinToast === d.id && (
                           <motion.span
@@ -230,7 +237,7 @@ export default function DevoirsPage() {
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white whitespace-nowrap shadow-lg"
-            style={{ background: "#1a0a35", border: "1px solid rgba(139,92,246,0.6)" }}
+            style={{ background: "#3b0764", border: "1px solid rgba(139,92,246,0.4)" }}
           >
             🏅 Nouveau badge : {badgeToast.emoji} {badgeToast.name} !
           </motion.div>
@@ -240,13 +247,13 @@ export default function DevoirsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle style={{ color: "#3b0764" }}>
               {editing ? "Modifier le devoir" : "Ajouter un devoir"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Matière</Label>
+              <Label style={{ color: "#3b0764" }}>Matière</Label>
               <Select
                 value={form.matiere}
                 onValueChange={(v) => setForm((f) => ({ ...f, matiere: v ?? f.matiere }))}
@@ -262,7 +269,7 @@ export default function DevoirsPage() {
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Titre</Label>
+              <Label style={{ color: "#3b0764" }}>Titre</Label>
               <Input
                 className="rounded-2xl"
                 placeholder="Ex: Exercices page 45"
@@ -271,7 +278,7 @@ export default function DevoirsPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Date limite</Label>
+              <Label style={{ color: "#3b0764" }}>Date limite</Label>
               <Input
                 type="date"
                 className="rounded-2xl"
@@ -280,7 +287,7 @@ export default function DevoirsPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Durée estimée</Label>
+              <Label style={{ color: "#3b0764" }}>Durée estimée</Label>
               <Select
                 value={form.duree}
                 onValueChange={(v) => setForm((f) => ({ ...f, duree: v ?? f.duree }))}
@@ -296,11 +303,11 @@ export default function DevoirsPage() {
               </Select>
             </div>
           </div>
-          <DialogFooter className="gap-2 border-0 bg-transparent">
+          <DialogFooter className="gap-2">
             <button
               onClick={() => setOpen(false)}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
-              style={{ color: "#a78bfa" }}
+              style={{ color: "#7c3aed" }}
             >
               Annuler
             </button>
@@ -308,7 +315,7 @@ export default function DevoirsPage() {
               onClick={handleSubmit}
               disabled={!form.matiere || !form.titre || !form.dueDate}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
             >
               {editing ? "Modifier" : "Ajouter"}
             </button>

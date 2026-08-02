@@ -89,33 +89,21 @@ export default function HomePage() {
       saveGameStats(newStats);
       setStats(newStats);
 
-      const cartableCompletions = parseInt(
-        localStorage.getItem("alma_cartable_completions") ?? "0",
-        10
-      );
+      const cartableCompletions = parseInt(localStorage.getItem("alma_cartable_completions") ?? "0", 10);
       const currentBadges = getBadges();
       const { updatedBadges, newlyUnlocked } = checkAndUnlockBadges(
-        newStats,
-        updatedDevoirs,
-        currentBadges,
-        cartableCompletions
+        newStats, updatedDevoirs, currentBadges, cartableCompletions
       );
       saveBadges(updatedBadges);
       setBadges(updatedBadges);
       if (newlyUnlocked.length > 0) {
         setCelebrating(true);
         setBadgeToast(newlyUnlocked[0]);
-        setTimeout(() => {
-          setCelebrating(false);
-          setBadgeToast(null);
-        }, 3000);
+        setTimeout(() => { setCelebrating(false); setBadgeToast(null); }, 3000);
       }
     } else {
       const rawStats = getGameStats();
-      const newStats: GameStats = {
-        ...rawStats,
-        coins: Math.max(0, rawStats.coins - 10),
-      };
+      const newStats: GameStats = { ...rawStats, coins: Math.max(0, rawStats.coins - 10) };
       saveGameStats(newStats);
       setStats(newStats);
     }
@@ -144,7 +132,7 @@ export default function HomePage() {
         >
           🪙 {stats.coins}
         </motion.div>
-        <span className="text-xs font-bold tracking-widest" style={{ color: "#c084fc" }}>
+        <span className="text-xs font-bold tracking-widest" style={{ color: "#7c3aed" }}>
           ALMA
         </span>
         <div
@@ -159,11 +147,11 @@ export default function HomePage() {
       <div
         className="rounded-3xl mb-3 text-center overflow-hidden"
         style={{
-          background: "linear-gradient(180deg, #1a0540 0%, #2d0e6e 50%, #4a1580 100%)",
+          background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)",
           padding: "16px",
         }}
       >
-        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#e9d5ff" }}>
+        <p className="text-xs font-bold uppercase tracking-widest mb-1 text-white/80">
           Bonjour ALMA 👋
         </p>
         <p className="text-lg font-extrabold text-white mb-3">{getTodayFr()}</p>
@@ -174,7 +162,7 @@ export default function HomePage() {
 
         <div
           className="rounded-2xl py-2 px-4 text-sm font-semibold text-white w-fit mx-auto mb-3"
-          style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}
+          style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)" }}
         >
           {getMascotteMessage(mascotteState, devoirs)}
         </div>
@@ -182,12 +170,12 @@ export default function HomePage() {
         <div className="flex justify-center">
           <motion.div
             className="relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
+            style={{ background: "rgba(255,255,255,0.2)" }}
           >
             {stats.streak > 0 && (
               <motion.div
                 className="absolute inset-0 rounded-full"
-                style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
+                style={{ background: "rgba(255,255,255,0.15)" }}
                 animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
                 transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -200,58 +188,66 @@ export default function HomePage() {
       {/* ── LEVEL BAR ── */}
       <div className="mb-4 px-1">
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-bold" style={{ color: "#c084fc" }}>Niveau 2</span>
-          <span className="text-xs" style={{ color: "#a78bfa" }}>10 pts → niveau 3</span>
+          <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>Niveau 2</span>
+          <span className="text-xs" style={{ color: "#6d28d9" }}>10 pts → niveau 3</span>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.15)" }}>
           <div
             className="h-full rounded-full"
-            style={{ width: "72%", background: "linear-gradient(90deg, #8b5cf6, #ec4899)" }}
+            style={{ width: "72%", background: "linear-gradient(90deg, #7c3aed, #ec4899)" }}
           />
         </div>
       </div>
 
       {/* ── DÉFIS DU JOUR ── */}
       <div className="mb-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#f9a8d4" }}>
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           🎯 Défis du jour
         </h2>
         <div className="grid grid-cols-2 gap-2">
           <div
             className="rounded-2xl p-3"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(192,132,252,0.3)" }}
+            style={{
+              background: "#ffffff",
+              border: "1px solid rgba(139,92,246,0.2)",
+              boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+            }}
           >
             {nextPending ? (
               <>
-                <p className="text-xs font-bold text-white mb-0.5 truncate">{nextPending.matiere}</p>
-                <p className="text-xs truncate" style={{ color: "#a78bfa" }}>{nextPending.titre}</p>
+                <p className="text-xs font-bold mb-0.5 truncate" style={{ color: "#3b0764" }}>{nextPending.matiere}</p>
+                <p className="text-xs truncate" style={{ color: "#6d28d9" }}>{nextPending.titre}</p>
               </>
             ) : (
               <>
-                <p className="text-xs font-bold text-white mb-0.5">Tout fait !</p>
-                <p className="text-xs" style={{ color: "#a78bfa" }}>Bravo 🎉</p>
+                <p className="text-xs font-bold mb-0.5" style={{ color: "#3b0764" }}>Tout fait !</p>
+                <p className="text-xs" style={{ color: "#6d28d9" }}>Bravo 🎉</p>
               </>
             )}
             <p className="text-xs font-bold mt-1.5" style={{ color: "#f59e0b" }}>+10 🪙</p>
           </div>
           <div
             className="rounded-2xl p-3"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(192,132,252,0.3)" }}
+            style={{
+              background: "#ffffff",
+              border: "1px solid rgba(139,92,246,0.2)",
+              boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+            }}
           >
-            <p className="text-xs font-bold text-white mb-0.5">✅ Mission 1</p>
-            <p className="text-xs" style={{ color: "#a78bfa" }}>Terminée !</p>
-            <p className="text-xs font-bold mt-1.5" style={{ color: "#a78bfa" }}>+5 pts ⭐</p>
+            <p className="text-xs font-bold mb-0.5" style={{ color: "#3b0764" }}>✅ Mission 1</p>
+            <p className="text-xs" style={{ color: "#6d28d9" }}>Terminée !</p>
+            <p className="text-xs font-bold mt-1.5" style={{ color: "#7c3aed" }}>+5 pts ⭐</p>
           </div>
         </div>
       </div>
 
       {/* ── AUJOURD'HUI ── */}
       <div className="mb-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#f9a8d4" }}>
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           📖 Aujourd&apos;hui
         </h2>
         {devoirsAujourdhui.length === 0 ? (
-          <p className="text-center py-3 text-sm" style={{ color: "#a78bfa" }}>Aucun devoir 🎉</p>
+          <p className="text-center py-3 text-sm" style={{ color: "#6d28d9" }}>Aucun devoir 🎉</p>
         ) : (
           <div className="flex flex-col gap-2">
             {devoirsAujourdhui.map((d) => {
@@ -259,26 +255,30 @@ export default function HomePage() {
               return (
                 <div
                   key={d.id}
-                  className={`rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-40" : ""}`}
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  className={`rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid rgba(139,92,246,0.2)",
+                    boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+                  }}
                 >
                   <div className={`w-3 h-3 rounded-full flex-shrink-0 ${cfg.dot}`} />
                   <div className="flex-1 min-w-0">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
                       {d.matiere}
                     </span>
-                    <p className={`font-semibold mt-1.5 text-sm text-white ${d.completed ? "line-through" : ""}`}>
+                    <p className={`font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`} style={{ color: "#3b0764" }}>
                       {d.titre}
                     </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <Clock size={12} style={{ color: "#a78bfa" }} />
-                      <span className="text-xs" style={{ color: "#a78bfa" }}>{d.duree}</span>
+                      <Clock size={12} style={{ color: "#6d28d9" }} />
+                      <span className="text-xs" style={{ color: "#6d28d9" }}>{d.duree}</span>
                     </div>
                   </div>
                   <button onClick={() => toggle(d.id)} className="flex-shrink-0 active:scale-90 transition-transform">
                     {d.completed
-                      ? <CheckCircle2 size={28} className="text-green-400" />
-                      : <Circle size={28} style={{ color: "rgba(255,255,255,0.3)" }} />}
+                      ? <CheckCircle2 size={28} className="text-green-500" />
+                      : <Circle size={28} style={{ color: "rgba(124,58,237,0.3)" }} />}
                   </button>
                 </div>
               );
@@ -289,11 +289,11 @@ export default function HomePage() {
 
       {/* ── DEMAIN ── */}
       <div className="mb-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#f9a8d4" }}>
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           🌙 Demain
         </h2>
         {devoirsDemain.length === 0 ? (
-          <p className="text-center py-3 text-sm" style={{ color: "#a78bfa" }}>Aucun devoir pour demain</p>
+          <p className="text-center py-3 text-sm" style={{ color: "#6d28d9" }}>Aucun devoir pour demain</p>
         ) : (
           <div className="flex flex-col gap-2">
             {devoirsDemain.map((d) => {
@@ -302,14 +302,18 @@ export default function HomePage() {
                 <div
                   key={d.id}
                   className="rounded-[20px] p-4 flex items-center gap-3"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid rgba(139,92,246,0.2)",
+                    boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+                  }}
                 >
                   <div className={`w-3 h-3 rounded-full flex-shrink-0 ${cfg.dot}`} />
                   <div>
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
                       {d.matiere}
                     </span>
-                    <p className="text-sm mt-1" style={{ color: "#a78bfa" }}>{d.titre}</p>
+                    <p className="text-sm mt-1" style={{ color: "#6d28d9" }}>{d.titre}</p>
                   </div>
                 </div>
               );
@@ -321,10 +325,10 @@ export default function HomePage() {
       {/* ── BADGES ── */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "#f9a8d4" }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "#3b0764" }}>
             🏅 Mes badges
           </h2>
-          <Link href="/badges" className="text-xs font-semibold" style={{ color: "#a78bfa" }}>
+          <Link href="/badges" className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
             Voir tous →
           </Link>
         </div>
@@ -335,8 +339,8 @@ export default function HomePage() {
               className="text-xs px-3 py-1.5 rounded-full font-semibold"
               style={
                 !badge
-                  ? { background: "rgba(255,255,255,0.08)", color: "#6b7280" }
-                  : { background: "rgba(139,92,246,0.25)", color: "#e9d5ff" }
+                  ? { background: "rgba(0,0,0,0.06)", color: "#9ca3af" }
+                  : { background: "rgba(124,58,237,0.12)", color: "#7c3aed" }
               }
             >
               {badge ? `${badge.emoji} ${badge.name}` : "🔒"}
@@ -354,7 +358,7 @@ export default function HomePage() {
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white whitespace-nowrap shadow-lg"
-            style={{ background: "#1a0a35", border: "1px solid rgba(139,92,246,0.6)" }}
+            style={{ background: "#3b0764", border: "1px solid rgba(139,92,246,0.4)" }}
           >
             🏅 Nouveau badge : {badgeToast.emoji} {badgeToast.name} !
           </motion.div>

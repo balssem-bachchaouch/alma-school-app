@@ -111,33 +111,37 @@ export default function CartablePage() {
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-extrabold text-white">🎒 Mon Cartable</h1>
+        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>🎒 Mon Cartable</h1>
         <button
           onClick={() => setOpen(true)}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+          style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
         >
           <Plus size={16} />
           Ajouter
         </button>
       </div>
-      <p className="text-sm mb-6" style={{ color: "#a78bfa" }}>Prépare ton cartable pour demain</p>
+      <p className="text-sm mb-6" style={{ color: "#6d28d9" }}>Prépare ton cartable pour demain</p>
 
       {/* Progress */}
       <div
         className="rounded-3xl p-4 mb-6"
-        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.2)" }}
+        style={{
+          background: "#ffffff",
+          border: "1px solid rgba(139,92,246,0.2)",
+          boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+        }}
       >
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-semibold" style={{ color: "#e9d5ff" }}>
+          <span className="text-sm font-semibold" style={{ color: "#3b0764" }}>
             {done}/{total} éléments prêts
           </span>
-          <span className="text-sm font-bold" style={{ color: "#a78bfa" }}>{pct}%</span>
+          <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>{pct}%</span>
         </div>
-        <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+        <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.1)" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: "linear-gradient(90deg, #8b5cf6, #ec4899)" }}
+            style={{ width: `${pct}%`, background: "linear-gradient(90deg, #7c3aed, #ec4899)" }}
           />
         </div>
       </div>
@@ -151,8 +155,9 @@ export default function CartablePage() {
               key={item.id}
               className="rounded-3xl p-4 flex items-center gap-4 transition-all"
               style={{
-                background: isChecked ? "rgba(134,239,172,0.12)" : "rgba(255,255,255,0.07)",
-                border: `1px solid ${isChecked ? "rgba(134,239,172,0.2)" : "rgba(139,92,246,0.2)"}`,
+                background: isChecked ? "rgba(134,239,172,0.1)" : "#ffffff",
+                border: `1px solid ${isChecked ? "rgba(134,239,172,0.3)" : "rgba(139,92,246,0.2)"}`,
+                boxShadow: "0 2px 8px rgba(124,58,237,0.08)",
               }}
             >
               <button
@@ -160,8 +165,8 @@ export default function CartablePage() {
                 className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
                 style={
                   isChecked
-                    ? { background: "linear-gradient(135deg, #8b5cf6, #ec4899)", border: "none" }
-                    : { border: "2px solid rgba(139,92,246,0.4)", background: "transparent" }
+                    ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", border: "none" }
+                    : { border: "2px solid rgba(124,58,237,0.3)", background: "transparent" }
                 }
               >
                 {isChecked && (
@@ -179,7 +184,7 @@ export default function CartablePage() {
               <span
                 className="font-semibold text-base flex-1"
                 style={{
-                  color: isChecked ? "#86efac" : "white",
+                  color: isChecked ? "#16a34a" : "#3b0764",
                   textDecoration: isChecked ? "line-through" : "none",
                 }}
               >
@@ -187,7 +192,7 @@ export default function CartablePage() {
               </span>
               <button
                 onClick={() => handleDelete(item.id)}
-                className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-400"
+                className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
               >
                 <Trash2 size={16} />
               </button>
@@ -200,7 +205,10 @@ export default function CartablePage() {
       {allDone && (
         <div
           className="mt-8 text-center rounded-3xl py-8 px-4"
-          style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(236,72,153,0.3)" }}
+          style={{
+            background: "rgba(124,58,237,0.08)",
+            border: "1px solid rgba(236,72,153,0.3)",
+          }}
         >
           <div className="relative h-20 flex items-center justify-center mb-2">
             {BURST_COLORS.map((color, i) => {
@@ -221,7 +229,7 @@ export default function CartablePage() {
             })}
             <span className="text-4xl relative z-10">🎉</span>
           </div>
-          <p className="font-extrabold text-lg" style={{ color: "#f9a8d4" }}>
+          <p className="font-extrabold text-lg" style={{ color: "#ec4899" }}>
             Cartable prêt ! Bravo ALMA !
           </p>
         </div>
@@ -236,7 +244,7 @@ export default function CartablePage() {
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white whitespace-nowrap shadow-lg"
-            style={{ background: "#1a0a35", border: "1px solid rgba(139,92,246,0.6)" }}
+            style={{ background: "#3b0764", border: "1px solid rgba(139,92,246,0.4)" }}
           >
             🏅 Nouveau badge : {badgeToast.emoji} {badgeToast.name} !
           </motion.div>
@@ -247,11 +255,11 @@ export default function CartablePage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">Ajouter un élément</DialogTitle>
+            <DialogTitle style={{ color: "#3b0764" }}>Ajouter un élément</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Nom</Label>
+              <Label style={{ color: "#3b0764" }}>Nom</Label>
               <Input
                 className="rounded-2xl"
                 placeholder="Ex: Livre de maths"
@@ -261,7 +269,7 @@ export default function CartablePage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#e9d5ff" }}>Catégorie</Label>
+              <Label style={{ color: "#3b0764" }}>Catégorie</Label>
               <Select
                 value={form.categorie}
                 onValueChange={(v) => setForm((f) => ({ ...f, categorie: v ?? f.categorie }))}
@@ -277,11 +285,11 @@ export default function CartablePage() {
               </Select>
             </div>
           </div>
-          <DialogFooter className="gap-2 border-0 bg-transparent">
+          <DialogFooter className="gap-2">
             <button
               onClick={() => setOpen(false)}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
-              style={{ color: "#a78bfa" }}
+              style={{ color: "#7c3aed" }}
             >
               Annuler
             </button>
@@ -289,7 +297,7 @@ export default function CartablePage() {
               onClick={handleAdd}
               disabled={!form.label}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
             >
               Ajouter
             </button>

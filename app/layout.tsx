@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="fr" className={inter.variable}>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#8b5cf6" />
+        <meta name="theme-color" content="#c4b5fd" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="ALMA" />
