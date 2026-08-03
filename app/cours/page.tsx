@@ -181,7 +181,39 @@ export default function CoursPage() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   useEffect(() => {
-    setCours(getCours());
+    // Migrate old schema (matiere: string → matieres: string[], missing jours/dateDebut, etc.)
+    const raw = getCours() as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const migrated: CoursParticulier[] = raw.map((c) => ({
+      ...c,
+      matieres: Array.isArray(c.matieres)
+        ? c.matieres
+        : typeof c.matiere === "string"
+        ? [c.matiere]
+        : ["Autre"],
+      jours: Array.isArray(c.jours) ? c.jours : [],
+      dateDebut: typeof c.dateDebut === "string" ? c.dateDebut : todayStr(),
+      cycles: (Array.isArray(c.cycles) ? c.cycles : []).map(
+        (cy: any, cyIdx: number) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+          ...cy,
+          numero: typeof cy.numero === "number" ? cy.numero : cyIdx + 1,
+          seances: (Array.isArray(cy.seances) ? cy.seances : []).map(
+            (s: any, si: number) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+              ...s,
+              numero: typeof s.numero === "number" ? s.numero : si + 1,
+              jour: typeof s.jour === "string" ? s.jour : "",
+              datePrevu:
+                typeof s.datePrevu === "string"
+                  ? s.datePrevu
+                  : typeof s.date === "string"
+                  ? s.date
+                  : todayStr(),
+            })
+          ),
+        })
+      ),
+    }));
+    setCours(migrated);
+    saveCours(migrated);
     setLoaded(true);
   }, []);
 
