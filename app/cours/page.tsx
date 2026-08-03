@@ -37,12 +37,10 @@ function formatDate(dateStr?: string): string {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-// JS getDay: 0=Sun,1=Mon…6=Sat → jours: 0=Lun…6=Dim
 function jsToJours(jsDay: number): number {
   return (jsDay + 6) % 7;
 }
 
-// Returns the most recent past occurrence (inclusive of today) of any day in jours
 function mostRecentFixedDay(jours: number[]): string {
   if (!jours || jours.length === 0) return todayStr();
   const now = new Date();
@@ -64,6 +62,8 @@ function createCycle(seancesParCycle: number, dateDebut: string): CoursCycle {
   }));
   return { id: crypto.randomUUID(), dateDebut, paid: false, seances };
 }
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 type FormState = {
   nom: string;
@@ -89,6 +89,17 @@ type SeanceDialogState = {
   seanceId: string;
   date: string;
 };
+
+type PaymentDialogState = {
+  coursId: string;
+  cycleId: string;
+  montant: string;
+  devise: string;
+  date: string;
+  prochaineDate: string;
+};
+
+// ── Sub-components ─────────────────────────────────────────────────────────
 
 function JoursToggle({
   jours,
@@ -128,6 +139,8 @@ function JoursToggle({
   );
 }
 
+// ── Page ───────────────────────────────────────────────────────────────────
+
 export default function CoursPage() {
   const [cours, setCours] = useState<CoursParticulier[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -138,6 +151,7 @@ export default function CoursPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [seanceDialog, setSeanceDialog] = useState<SeanceDialogState | null>(null);
+  const [paymentDialog, setPaymentDialog] = useState<PaymentDialogState | null>(null);
 
   useEffect(() => {
     setCours(getCours());
@@ -156,9 +170,13 @@ export default function CoursPage() {
     }));
   };
 
+  // ── Cours CRUD ─────────────────────────────────────────────────────────
+
   const handleAdd = () => {
     if (!form.nom || !form.montant) return;
     const seancesN = Math.max(1, parseInt(form.seancesParCycle) || 12);
+    const today = todayStr();
+    const firstCycle = createCycle(seancesN, today);
     const newCours: CoursParticulier = {
       id: crypto.randomUUID(),
       nom: form.nom,
@@ -167,11 +185,19 @@ export default function CoursPage() {
       devise: form.devise,
       seancesParCycle: seancesN,
       jours: form.jours,
-      cycles: [createCycle(seancesN, todayStr())],
+      cycles: [firstCycle],
     };
     save([...cours, newCours]);
     setForm(DEFAULT_FORM);
     setAddOpen(false);
+    setPaymentDialog({
+      coursId: newCours.id,
+      cycleId: firstCycle.id,
+      montant: String(newCours.montant),
+      devise: newCours.devise,
+      date: today,
+      prochaineDate: "",
+    });
   };
 
   const openEdit = (c: CoursParticulier) => {
@@ -212,6 +238,58 @@ export default function CoursPage() {
     setDeleteConfirmId(null);
     if (expandedId === id) setExpandedId(null);
   };
+
+  // ── Cycle / payment ────────────────────────────────────────────────────
+
+  const handleNewCycleWithPayment = (coursId: string) => {
+    const c = cours.find((co) => co.id === coursId);
+    if (!c) return;
+    const today = todayStr();
+    const newCycle = createCycle(c.seancesParCycle, today);
+    save(
+      cours.map((co) => {
+        if (co.id !== coursId) return co;
+        const updatedCycles = co.cycles.map((cy, i) =>
+          i === co.cycles.length - 1 ? { ...cy, paid: true } : cy
+        );
+        return { ...co, cycles: [...updatedCycles, newCycle] };
+      })
+    );
+    setPaymentDialog({
+      coursId,
+      cycleId: newCycle.id,
+      montant: String(c.montant),
+      devise: c.devise,
+      date: today,
+      prochaineDate: "",
+    });
+  };
+
+  const confirmPayment = () => {
+    if (!paymentDialog) return;
+    const { coursId, cycleId, montant, date, prochaineDate } = paymentDialog;
+    save(
+      cours.map((c) => {
+        if (c.id !== coursId) return c;
+        return {
+          ...c,
+          cycles: c.cycles.map((cy) => {
+            if (cy.id !== cycleId) return cy;
+            return {
+              ...cy,
+              paid: true,
+              datePaiement: date,
+              montantPaye: parseFloat(montant) || c.montant,
+              ...(prochaineDate ? { prochaineDate } : {}),
+            };
+          }),
+        };
+      })
+    );
+    setPaymentDialog(null);
+  };
+
+  // ── Séances ────────────────────────────────────────────────────────────
 
   const applySeance = (
     coursId: string,
@@ -269,20 +347,9 @@ export default function CoursPage() {
     setSeanceDialog(null);
   };
 
-  const markPaid = (coursId: string) => {
-    save(
-      cours.map((c) => {
-        if (c.id !== coursId) return c;
-        const today = todayStr();
-        const updatedCycles = c.cycles.map((cy, i) =>
-          i === c.cycles.length - 1 ? { ...cy, paid: true, datePaiement: today } : cy
-        );
-        return { ...c, cycles: [...updatedCycles, createCycle(c.seancesParCycle, today)] };
-      })
-    );
-  };
-
   if (!loaded) return null;
+
+  // ── Render ─────────────────────────────────────────────────────────────
 
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
@@ -306,7 +373,6 @@ export default function CoursPage() {
           : `${cours.length} cours suivi${cours.length > 1 ? "s" : ""}`}
       </p>
 
-      {/* Empty state */}
       {cours.length === 0 && (
         <div
           className="rounded-3xl p-8 text-center"
@@ -330,13 +396,15 @@ export default function CoursPage() {
       <div className="flex flex-col gap-4">
         {cours.map((c) => {
           const currentCycle = c.cycles[c.cycles.length - 1];
-          const doneCount = currentCycle.seances.filter((s) => s.done).length;
+          const seancesDone = currentCycle.seances.filter((s) => s.done).length;
           const total = currentCycle.seances.length;
-          const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-          const remaining = total - doneCount;
-          const isComplete = doneCount === total;
+          const pct = total > 0 ? Math.round((seancesDone / total) * 100) : 0;
+          const remaining = total - seancesDone;
+          const isComplete = seancesDone === total;
           const isExpanded = expandedId === c.id;
           const jours = Array.isArray(c.jours) ? c.jours : [];
+          // Orange: ≤2 séances left and not complete
+          const showOrange = !isComplete && remaining > 0 && remaining <= 2;
 
           return (
             <div
@@ -348,29 +416,41 @@ export default function CoursPage() {
                 boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
               }}
             >
-              {/* Payment due banner */}
-              {isComplete && !currentCycle.paid && (
+              {/* ── Top banners ── */}
+              {isComplete ? (
                 <div
-                  className="px-4 py-2.5 flex items-center justify-between"
+                  className="px-4 py-2.5 flex items-center justify-between gap-2"
                   style={{
                     background: "rgba(239,68,68,0.08)",
                     borderBottom: "1px solid rgba(239,68,68,0.2)",
                   }}
                 >
                   <span className="text-sm font-bold" style={{ color: "#dc2626" }}>
-                    🔔 PAIEMENT DÛ — {c.montant} {c.devise} !
+                    🔔 Cycle terminé — Payer {c.montant} {c.devise} !
                   </span>
                   <button
-                    onClick={() => markPaid(c.id)}
-                    className="text-xs font-bold px-3 py-1 rounded-xl text-white active:scale-95 transition-transform"
+                    onClick={() => handleNewCycleWithPayment(c.id)}
+                    className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-xl text-white active:scale-95 transition-transform"
                     style={{ background: "#dc2626" }}
                   >
-                    Payé ✓
+                    Nouveau cycle +
                   </button>
                 </div>
-              )}
+              ) : showOrange ? (
+                <div
+                  className="px-4 py-2"
+                  style={{
+                    background: "rgba(245,158,11,0.08)",
+                    borderBottom: "1px solid rgba(245,158,11,0.2)",
+                  }}
+                >
+                  <span className="text-xs font-bold" style={{ color: "#d97706" }}>
+                    ⚠️ Plus que {remaining} séance{remaining > 1 ? "s" : ""} avant le paiement !
+                  </span>
+                </div>
+              ) : null}
 
-              {/* Card body */}
+              {/* ── Card body ── */}
               <div className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
@@ -394,7 +474,7 @@ export default function CoursPage() {
                       Cycle {c.cycles.length} — {c.montant} {c.devise}
                     </div>
                   </div>
-                  <div className="flex items-center gap-0.5 ml-2 flex-shrink-0">
+                  <div className="flex items-center gap-0.5 ml-2 shrink-0">
                     <button
                       onClick={() => openEdit(c)}
                       className="p-1.5 rounded-xl active:scale-90 transition-transform"
@@ -427,7 +507,7 @@ export default function CoursPage() {
                 <div className="mb-2">
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="text-xs font-semibold" style={{ color: "#3b0764" }}>
-                      Séance {doneCount}/{total}
+                      Séance {seancesDone}/{total}
                     </span>
                     <span className="text-xs font-bold" style={{ color: "#7c3aed" }}>
                       {pct}%
@@ -446,20 +526,21 @@ export default function CoursPage() {
                   </div>
                 </div>
 
-                {/* Status messages */}
-                {currentCycle.paid && (
+                {/* Payment info */}
+                {currentCycle.datePaiement && (
                   <p className="text-xs font-semibold mt-1.5" style={{ color: "#16a34a" }}>
-                    💰 Payé le {formatDate(currentCycle.datePaiement)} — {c.montant} {c.devise}
+                    💰 Payé le {formatDate(currentCycle.datePaiement)} —{" "}
+                    {currentCycle.montantPaye ?? c.montant} {c.devise}
                   </p>
                 )}
-                {!isComplete && !currentCycle.paid && remaining <= 3 && remaining > 0 && (
-                  <p className="text-xs font-semibold mt-1.5" style={{ color: "#d97706" }}>
-                    ⚠️ Paiement dans {remaining} séance{remaining > 1 ? "s" : ""}
+                {currentCycle.prochaineDate && (
+                  <p className="text-xs font-semibold mt-1" style={{ color: "#7c3aed" }}>
+                    📅 Prochain paiement prévu : {formatDate(currentCycle.prochaineDate)}
                   </p>
                 )}
               </div>
 
-              {/* Expanded detail */}
+              {/* ── Expanded detail ── */}
               <AnimatePresence initial={false}>
                 {isExpanded && (
                   <motion.div
@@ -484,7 +565,9 @@ export default function CoursPage() {
                             onClick={() => handleSeanceClick(c, currentCycle.id, s.id)}
                             className="flex items-center gap-3 py-1.5 px-1 rounded-xl text-left active:scale-95 transition-transform"
                           >
-                            <span className="text-base leading-none">{s.done ? "✅" : "⬜"}</span>
+                            <span className="text-base leading-none">
+                              {s.done ? "✅" : "⬜"}
+                            </span>
                             <span
                               className="text-sm font-semibold flex-1"
                               style={{ color: s.done ? "#16a34a" : "#3b0764" }}
@@ -506,23 +589,33 @@ export default function CoursPage() {
                       {/* Payment history */}
                       <div className="mt-4">
                         <p className="text-xs font-bold mb-2" style={{ color: "#6d28d9" }}>
-                          📋 Historique
+                          📋 Historique des paiements
                         </p>
                         <div className="flex flex-col gap-1.5">
-                          {c.cycles.map((cy, idx) => (
-                            <div key={cy.id} className="flex items-center gap-2">
-                              <span className="text-sm">{cy.paid ? "✅" : "🔄"}</span>
-                              <span
-                                className="text-xs"
-                                style={{ color: cy.paid ? "#16a34a" : "#6d28d9" }}
-                              >
-                                Cycle {idx + 1}
-                                {cy.paid
-                                  ? ` — Payé le ${formatDate(cy.datePaiement)} — ${c.montant} ${c.devise}`
-                                  : " — En cours"}
-                              </span>
-                            </div>
-                          ))}
+                          {c.cycles.map((cy, idx) => {
+                            const cycleDone = cy.seances.filter((s) => s.done).length;
+                            const cycleComplete = cycleDone === cy.seances.length;
+                            const isLast = idx === c.cycles.length - 1;
+                            return (
+                              <div key={cy.id} className="flex items-start gap-2">
+                                <span className="text-sm shrink-0">
+                                  {cycleComplete || !isLast ? "✅" : "🔄"}
+                                </span>
+                                <span
+                                  className="text-xs"
+                                  style={{ color: cycleComplete || !isLast ? "#16a34a" : "#6d28d9" }}
+                                >
+                                  Cycle {idx + 1}
+                                  {cy.datePaiement
+                                    ? ` — Payé le ${formatDate(cy.datePaiement)} — ${cy.montantPaye ?? c.montant} ${c.devise}`
+                                    : " — Non payé"}
+                                  {" — "}
+                                  {cycleDone}/{cy.seances.length} séances
+                                  {isLast && !cycleComplete ? " 🔄" : ""}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -534,7 +627,7 @@ export default function CoursPage() {
         })}
       </div>
 
-      {/* ── Add Dialog ── */}
+      {/* ══ Add Dialog ══════════════════════════════════════════════════════ */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -561,9 +654,7 @@ export default function CoursPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {MATIERES.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -590,9 +681,7 @@ export default function CoursPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {DEVISES.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -612,10 +701,7 @@ export default function CoursPage() {
           </div>
           <DialogFooter className="gap-2">
             <button
-              onClick={() => {
-                setAddOpen(false);
-                setForm(DEFAULT_FORM);
-              }}
+              onClick={() => { setAddOpen(false); setForm(DEFAULT_FORM); }}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
               style={{ color: "#7c3aed" }}
             >
@@ -633,15 +719,10 @@ export default function CoursPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Edit Dialog ── */}
+      {/* ══ Edit Dialog ═════════════════════════════════════════════════════ */}
       <Dialog
         open={editOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditOpen(false);
-            setEditingId(null);
-          }
-        }}
+        onOpenChange={(open) => { if (!open) { setEditOpen(false); setEditingId(null); } }}
       >
         <DialogContent className="rounded-3xl mx-4 max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -667,9 +748,7 @@ export default function CoursPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {MATIERES.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -695,9 +774,7 @@ export default function CoursPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {DEVISES.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -707,10 +784,7 @@ export default function CoursPage() {
           </div>
           <DialogFooter className="gap-2">
             <button
-              onClick={() => {
-                setEditOpen(false);
-                setEditingId(null);
-              }}
+              onClick={() => { setEditOpen(false); setEditingId(null); }}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
               style={{ color: "#7c3aed" }}
             >
@@ -728,12 +802,10 @@ export default function CoursPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Delete confirm ── */}
+      {/* ══ Delete confirm ══════════════════════════════════════════════════ */}
       <Dialog
         open={deleteConfirmId !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirmId(null);
-        }}
+        onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}
       >
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
@@ -751,9 +823,7 @@ export default function CoursPage() {
               Annuler
             </button>
             <button
-              onClick={() => {
-                if (deleteConfirmId) handleDelete(deleteConfirmId);
-              }}
+              onClick={() => { if (deleteConfirmId) handleDelete(deleteConfirmId); }}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm"
               style={{ background: "#dc2626" }}
             >
@@ -763,12 +833,10 @@ export default function CoursPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Séance completion dialog ── */}
+      {/* ══ Séance date dialog ══════════════════════════════════════════════ */}
       <Dialog
         open={seanceDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) setSeanceDialog(null);
-        }}
+        onOpenChange={(open) => { if (!open) setSeanceDialog(null); }}
       >
         <DialogContent className="rounded-3xl mx-4 max-w-xs">
           <DialogHeader>
@@ -801,6 +869,86 @@ export default function CoursPage() {
               style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
             >
               Confirmer ✅
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ══ Payment dialog ══════════════════════════════════════════════════ */}
+      <Dialog
+        open={paymentDialog !== null}
+        onOpenChange={(open) => { if (!open) setPaymentDialog(null); }}
+      >
+        <DialogContent className="rounded-3xl mx-4 max-w-sm">
+          <DialogHeader>
+            <DialogTitle style={{ color: "#3b0764" }}>💰 Paiement début de cycle</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <Label style={{ color: "#3b0764" }}>Date du paiement</Label>
+              <Input
+                className="rounded-2xl"
+                type="date"
+                value={paymentDialog?.date ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPaymentDialog((d) => (d ? { ...d, date: val } : d));
+                }}
+              />
+            </div>
+            <div className="flex gap-3 items-end">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <Label style={{ color: "#3b0764" }}>Montant</Label>
+                <Input
+                  className="rounded-2xl"
+                  type="number"
+                  value={paymentDialog?.montant ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPaymentDialog((d) => (d ? { ...d, montant: val } : d));
+                  }}
+                />
+              </div>
+              <span
+                className="pb-2 text-sm font-bold"
+                style={{ color: "#6d28d9" }}
+              >
+                {paymentDialog?.devise ?? ""}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label style={{ color: "#3b0764" }}>
+                Prochaine date prévue{" "}
+                <span className="font-normal text-xs" style={{ color: "#9ca3af" }}>
+                  (optionnel)
+                </span>
+              </Label>
+              <Input
+                className="rounded-2xl"
+                type="date"
+                value={paymentDialog?.prochaineDate ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPaymentDialog((d) => (d ? { ...d, prochaineDate: val } : d));
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <button
+              onClick={() => setPaymentDialog(null)}
+              className="px-4 py-2 rounded-2xl font-semibold text-sm"
+              style={{ color: "#9ca3af" }}
+            >
+              Plus tard
+            </button>
+            <button
+              onClick={confirmPayment}
+              disabled={!paymentDialog?.date || !paymentDialog?.montant}
+              className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+            >
+              Confirmer le paiement
             </button>
           </DialogFooter>
         </DialogContent>

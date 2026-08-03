@@ -50,6 +50,8 @@ export interface CoursCycle {
   id: string;
   dateDebut: string;
   datePaiement?: string;
+  montantPaye?: number;
+  prochaineDate?: string;
   paid: boolean;
   seances: CoursSeance[];
 }
