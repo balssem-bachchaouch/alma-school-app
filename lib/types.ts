@@ -42,27 +42,28 @@ export interface Badge {
 export interface CoursSeance {
   id: string;
   numero: number;
-  date?: string;
+  jour: string;       // "LUNDI", "MARDI" etc
+  datePrevu: string;  // ISO date, auto-generated
   done: boolean;
 }
 
 export interface CoursCycle {
   id: string;
-  dateDebut: string;
+  numero: number;
+  seances: CoursSeance[];
   datePaiement?: string;
   montantPaye?: number;
-  prochaineDate?: string;
   paid: boolean;
-  seances: CoursSeance[];
 }
 
 export interface CoursParticulier {
   id: string;
   nom: string;
-  matiere: string;
+  matieres: string[];
   montant: number;
   devise: string;
   seancesParCycle: number;
-  jours?: number[]; // 0=Lundi … 6=Dimanche
+  jours: number[];       // 0=Lun...6=Dim
+  dateDebut: string;     // start date
   cycles: CoursCycle[];
 }
