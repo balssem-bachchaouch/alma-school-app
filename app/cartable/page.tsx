@@ -138,7 +138,7 @@ export default function CartablePage() {
           </span>
           <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>{pct}%</span>
         </div>
-        <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.1)" }}>
+        <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.3)" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${pct}%`, background: "linear-gradient(90deg, #7c3aed, #ec4899)" }}
