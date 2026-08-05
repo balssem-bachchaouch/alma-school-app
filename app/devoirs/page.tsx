@@ -171,7 +171,7 @@ export default function DevoirsPage() {
   });
 
   return (
-    <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
+    <div className="px-4 pt-8 pb-24 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📚 Mes Devoirs</h1>
         <button

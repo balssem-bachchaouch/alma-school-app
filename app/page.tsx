@@ -130,7 +130,7 @@ export default function HomePage() {
   if (!loaded) return null;
 
   return (
-    <div className="px-4 pt-4 pb-4 max-w-md mx-auto">
+    <div className="px-4 pt-4 pb-24 max-w-md mx-auto">
 
       {/* ── TOP BAR ── */}
       <div className="flex items-center justify-between mb-3">

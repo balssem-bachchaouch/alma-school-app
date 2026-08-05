@@ -454,7 +454,7 @@ export default function CoursPage() {
                 {isExpanded && (
                   <motion.div key="exp" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
-                    <div className="px-4 pb-4" style={{ borderTop: "1px solid rgba(139,92,246,0.1)" }}>
+                    <div className="px-4 pb-24" style={{ borderTop: "1px solid rgba(139,92,246,0.1)" }}>
 
                       {/* Cycle navigation */}
                       <div className="flex items-center justify-between mt-3 mb-1">
