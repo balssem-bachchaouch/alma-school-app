@@ -440,8 +440,8 @@ export default function CoursPage() {
                     ) : null}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <button onClick={() => openEdit(c)} className="p-1.5 rounded-xl active:scale-90 transition-transform" style={{ color: "#7c3aed" }}><Pencil size={15} /></button>
-                    <button onClick={() => setDeleteConfirmId(c.id)} className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"><Trash2 size={15} /></button>
+                    <button onClick={() => openEdit(c)} className="p-2.5 rounded-xl active:scale-90 transition-transform" style={{ color: "#7c3aed" }}><Pencil size={15} /></button>
+                    <button onClick={() => setDeleteConfirmId(c.id)} className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"><Trash2 size={15} /></button>
                     <button onClick={() => setExpandedId(isExpanded ? null : c.id)} className="p-1.5 rounded-xl active:scale-90 transition-transform" style={{ color: "#7c3aed" }}>
                       <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}><ChevronDown size={18} /></motion.div>
                     </button>

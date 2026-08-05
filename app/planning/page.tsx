@@ -196,14 +196,14 @@ export default function PlanningPage() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => openEdit(slot)}
-                          className="p-1.5 rounded-xl active:scale-90 transition-transform"
+                          className="p-2.5 rounded-xl active:scale-90 transition-transform"
                           style={{ color: "#7c3aed" }}
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(slot.id)}
-                          className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                          className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
                         >
                           <Trash2 size={14} />
                         </button>

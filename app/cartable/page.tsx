@@ -192,7 +192,7 @@ export default function CartablePage() {
               </span>
               <button
                 onClick={() => handleDelete(item.id)}
-                className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
               >
                 <Trash2 size={16} />
               </button>

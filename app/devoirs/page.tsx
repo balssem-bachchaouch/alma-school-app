@@ -237,14 +237,14 @@ export default function DevoirsPage() {
                   <div className="flex items-center gap-1.5 flex-shrink-0 relative">
                     <button
                       onClick={() => openEdit(d)}
-                      className="p-1.5 rounded-xl active:scale-90 transition-transform"
+                      className="p-2.5 rounded-xl active:scale-90 transition-transform"
                       style={{ color: "#7c3aed" }}
                     >
                       <Pencil size={15} />
                     </button>
                     <button
                       onClick={() => handleDelete(d.id)}
-                      className="p-1.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                      className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
                     >
                       <Trash2 size={15} />
                     </button>
