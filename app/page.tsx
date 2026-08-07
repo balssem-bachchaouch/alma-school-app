@@ -278,7 +278,7 @@ export default function HomePage() {
             <div className="w-6 h-6 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
           </div>
         ) : devoirsAujourdhui.length === 0 ? (
-          <p className="text-center py-3 text-sm" style={{ color: "#6d28d9" }}>Aucun devoir 🎉</p>
+          <p className="text-center py-3 text-sm" style={{ color: "#4c1d95" }}>Aucun devoir 🎉</p>
         ) : (
           <div className="flex flex-col gap-2">
             {devoirsAujourdhui.map((d) => {
@@ -328,7 +328,7 @@ export default function HomePage() {
             <div className="w-6 h-6 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
           </div>
         ) : devoirsDemain.length === 0 ? (
-          <p className="text-center py-3 text-sm" style={{ color: "#6d28d9" }}>Aucun devoir pour demain</p>
+          <p className="text-center py-3 text-sm" style={{ color: "#4c1d95" }}>Aucun devoir pour demain</p>
         ) : (
           <div className="flex flex-col gap-2">
             {devoirsDemain.map((d) => {
@@ -374,8 +374,8 @@ export default function HomePage() {
               className="text-xs px-3 py-1.5 rounded-full font-semibold"
               style={
                 !badge
-                  ? { background: "rgba(0,0,0,0.06)", color: "#9ca3af" }
-                  : { background: "rgba(124,58,237,0.12)", color: "#7c3aed" }
+                  ? { background: "rgba(0,0,0,0.06)", color: "#4b5563" }
+                  : { background: "rgba(124,58,237,0.12)", color: "#3b0764" }
               }
             >
               {badge ? `${badge.emoji} ${badge.name}` : "🔒"}
