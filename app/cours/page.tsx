@@ -57,6 +57,7 @@ type NewCycleDialog = { coursId: string; currentCycleId: string; cycleNumero: nu
 type AddSeanceDialog = { coursId: string; cycleId: string; date: string; statut: "todo" | "done" };
 type EditDateDialog = { coursId: string; cycleId: string; seanceId: string; date: string };
 type DeleteSeanceDialog = { coursId: string; cycleId: string; seanceId: string; numero: number };
+type EditSeanceDialog = { coursId: string; cycleId: string; seanceId: string; date: string; matiere: string };
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ export default function CoursPage() {
   const [addSeanceDialog, setAddSeanceDialog] = useState<AddSeanceDialog | null>(null);
   const [editDateDialog, setEditDateDialog] = useState<EditDateDialog | null>(null);
   const [deleteSeanceDialog, setDeleteSeanceDialog] = useState<DeleteSeanceDialog | null>(null);
+  const [editSeanceDialog, setEditSeanceDialog] = useState<EditSeanceDialog | null>(null);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   useEffect(() => {
@@ -342,6 +344,27 @@ export default function CoursPage() {
     setDeleteSeanceDialog(null);
   };
 
+  // ── Edit séance (date + matière) ──────────────────────────────────────
+
+  const confirmEditSeance = () => {
+    if (!editSeanceDialog?.date) return;
+    const { coursId, cycleId, seanceId, date, matiere } = editSeanceDialog;
+    const jour = new Date(date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long" }).toUpperCase();
+    save(cours.map(c => {
+      if (c.id !== coursId) return c;
+      return {
+        ...c, cycles: c.cycles.map(cy => {
+          if (cy.id !== cycleId) return cy;
+          const updated = cy.seances
+            .map(s => s.id === seanceId ? { ...s, datePrevu: date, jour, ...(matiere ? { matiere } : {}) } : s)
+            .sort((a, b) => a.datePrevu.localeCompare(b.datePrevu));
+          return { ...cy, seances: updated.map((s, i) => ({ ...s, numero: i + 1 })) };
+        }),
+      };
+    }));
+    setEditSeanceDialog(null);
+  };
+
   // ── Edit séance date ───────────────────────────────────────────────────
 
   const confirmEditDate = () => {
@@ -506,8 +529,8 @@ export default function CoursPage() {
                       {/* Table */}
                       <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(139,92,246,0.15)" }}>
                         <div className="grid text-xs font-bold px-3 py-2"
-                          style={{ gridTemplateColumns: "2rem 5rem 1fr 1.5rem 2.5rem", background: "rgba(124,58,237,0.06)", color: "#6d28d9", borderBottom: "1px solid rgba(139,92,246,0.15)" }}>
-                          <span>N°</span><span>JOUR</span><span>DATE</span><span></span><span className="text-right">✓</span>
+                          style={{ gridTemplateColumns: "2rem 5rem 1fr 1.5rem 1.5rem 2.5rem", background: "rgba(124,58,237,0.06)", color: "#6d28d9", borderBottom: "1px solid rgba(139,92,246,0.15)" }}>
+                          <span>N°</span><span>JOUR</span><span>DATE</span><span></span><span></span><span className="text-right">✓</span>
                         </div>
 
                         {viewedCycle.seances.map((s, rowIdx) => {
@@ -515,7 +538,7 @@ export default function CoursPage() {
                           return (
                             <div key={s.id} className="grid items-center px-3 py-2 text-xs"
                               style={{
-                                gridTemplateColumns: "2rem 5rem 1fr 1.5rem 2.5rem",
+                                gridTemplateColumns: "2rem 5rem 1fr 1.5rem 1.5rem 2.5rem",
                                 background: s.done ? "rgba(134,239,172,0.08)" : isExtra ? "rgba(124,58,237,0.03)" : "#fff",
                                 borderTop: rowIdx > 0 ? "1px solid rgba(139,92,246,0.08)" : undefined,
                                 borderLeft: isExtra && !s.done ? "3px solid rgba(124,58,237,0.3)" : undefined,
@@ -528,6 +551,16 @@ export default function CoursPage() {
                                 style={{ color: s.done ? "#6b7280" : "#3b0764", textDecoration: s.done ? "line-through" : "none", cursor: isCurrentView ? "pointer" : "default" }}>
                                 {formatDateFr(s.datePrevu)}
                               </button>
+                              <div className="flex justify-center">
+                                {!s.done && isCurrentView && (
+                                  <button
+                                    onClick={() => setEditSeanceDialog({ coursId: c.id, cycleId: viewedCycle.id, seanceId: s.id, date: s.datePrevu, matiere: s.matiere ?? "" })}
+                                    className="flex items-center justify-center active:scale-90 transition-transform"
+                                    style={{ color: "#7c3aed", opacity: 0.7 }}>
+                                    ✏️
+                                  </button>
+                                )}
+                              </div>
                               <div className="flex justify-center">
                                 {!s.done && isCurrentView && (
                                   <button
@@ -823,6 +856,47 @@ export default function CoursPage() {
             <button onClick={addSeance} disabled={!addSeanceDialog?.date}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
               style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>Ajouter</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ══ Edit séance dialog ═════════════════════════════════════════════ */}
+      <Dialog open={editSeanceDialog !== null} onOpenChange={o => { if (!o) setEditSeanceDialog(null); }}>
+        <DialogContent className="rounded-3xl mx-4 max-w-xs">
+          <DialogHeader><DialogTitle style={{ color: "#3b0764" }}>✏️ Modifier la séance</DialogTitle></DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <Label style={{ color: "#3b0764" }}>Date</Label>
+              <Input className="rounded-2xl" type="date" value={editSeanceDialog?.date ?? ""}
+                onChange={e => { const v = e.target.value; setEditSeanceDialog(d => d ? { ...d, date: v } : d); }} />
+            </div>
+            {editSeanceDialog?.date && (
+              <p className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
+                Jour : {new Date(editSeanceDialog.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long" }).toUpperCase()}
+              </p>
+            )}
+            {(() => {
+              const c = cours.find(co => co.id === editSeanceDialog?.coursId);
+              if (!c || c.matieres.length <= 1) return null;
+              return (
+                <div className="flex flex-col gap-1.5">
+                  <Label style={{ color: "#3b0764" }}>Matière <span className="font-normal text-xs" style={{ color: "#9ca3af" }}>(optionnel)</span></Label>
+                  <Select value={editSeanceDialog?.matiere ?? ""} onValueChange={v => setEditSeanceDialog(d => d ? { ...d, matiere: v } : d)}>
+                    <SelectTrigger className="rounded-2xl"><SelectValue placeholder="— Choisir —" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">— Aucune —</SelectItem>
+                      {c.matieres.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })()}
+          </div>
+          <DialogFooter className="gap-2">
+            <button onClick={() => setEditSeanceDialog(null)} className="px-4 py-2 rounded-2xl font-semibold text-sm" style={{ color: "#7c3aed" }}>Annuler</button>
+            <button onClick={confirmEditSeance} disabled={!editSeanceDialog?.date}
+              className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>Sauvegarder</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

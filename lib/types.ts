@@ -45,6 +45,7 @@ export interface CoursSeance {
   jour: string;       // "LUNDI", "MARDI" etc
   datePrevu: string;  // ISO date, auto-generated
   done: boolean;
+  matiere?: string;
 }
 
 export interface CoursCycle {
