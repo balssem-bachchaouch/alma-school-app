@@ -39,15 +39,19 @@ export function updateCycleSeances(
   cours: CoursParticulier
 ): CoursCycle {
   const doneCount = cycle.seances.filter((s) => s.done).length;
-  const needed = cours.seancesParCycle - doneCount;
-
-  if (needed <= 0) return cycle;
-
   const undoneCount = cycle.seances.filter((s) => !s.done).length;
 
-  if (undoneCount >= needed) return cycle;
+  // Only generate new séances when there are no pending ones left and cycle isn't done
+  if (undoneCount > 0 || doneCount >= cours.seancesParCycle) return cycle;
 
-  const toGenerate = needed - undoneCount;
+  // Cap total séances at seancesParCycle * 2
+  if (cycle.seances.length >= cours.seancesParCycle * 2) return cycle;
+
+  const toGenerate = Math.min(
+    cours.seancesParCycle - doneCount,
+    cours.seancesParCycle * 2 - cycle.seances.length
+  );
+
   const lastSeance = cycle.seances[cycle.seances.length - 1];
   const lastDate = new Date(lastSeance.datePrevu + "T12:00:00");
   lastDate.setDate(lastDate.getDate() + 1);
