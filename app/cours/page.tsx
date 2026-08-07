@@ -98,12 +98,45 @@ function MatiereToggle({ matieres, onToggle }: { matieres: string[]; onToggle: (
   );
 }
 
+// ── Normalise raw cours data (handles old localStorage format) ─────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeCours(raw: any[]): CoursParticulier[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return raw.map((c: any) => ({
+    ...c,
+    matieres: Array.isArray(c.matieres) ? c.matieres : typeof c.matiere === "string" ? [c.matiere] : ["Autre"],
+    jours: Array.isArray(c.jours) ? c.jours : [],
+    dateDebut: typeof c.dateDebut === "string" ? c.dateDebut : todayStr(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cycles: (Array.isArray(c.cycles) ? c.cycles : []).map((cy: any, cyIdx: number) => ({
+      ...cy,
+      numero: typeof cy.numero === "number" ? cy.numero : cyIdx + 1,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      seances: (Array.isArray(cy.seances) ? cy.seances : []).map((s: any, si: number) => ({
+        ...s,
+        numero: typeof s.numero === "number" ? s.numero : si + 1,
+        jour: typeof s.jour === "string" ? s.jour : "",
+        datePrevu: typeof s.datePrevu === "string" ? s.datePrevu : typeof s.date === "string" ? s.date : todayStr(),
+      })),
+    })),
+  }));
+}
+
+function applyAutoExtend(c: CoursParticulier): CoursParticulier {
+  if (c.cycles.length === 0) return c;
+  const i = c.cycles.length - 1;
+  const updated = updateCycleSeances(c.cycles[i], c);
+  return { ...c, cycles: [...c.cycles.slice(0, i), updated] };
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function CoursPage() {
   const [cours, setCours] = useState<CoursParticulier[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [migratedToast, setMigratedToast] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewCycleIdx, setViewCycleIdx] = useState<Record<string, number>>({});
 
@@ -120,44 +153,46 @@ export default function CoursPage() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   useEffect(() => {
-    fetch("/api/cours")
-      .then(r => {
+    const load = async () => {
+      try {
+        const r = await fetch("/api/cours");
         if (!r.ok) throw new Error("fetch");
-        return r.json() as Promise<CoursParticulier[]>;
-      })
-      .then(data => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const migrated: CoursParticulier[] = (data as any[]).map((c) => ({
-          ...c,
-          matieres: Array.isArray(c.matieres) ? c.matieres : typeof c.matiere === "string" ? [c.matiere] : ["Autre"],
-          jours: Array.isArray(c.jours) ? c.jours : [],
-          dateDebut: typeof c.dateDebut === "string" ? c.dateDebut : todayStr(),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          cycles: (Array.isArray(c.cycles) ? c.cycles : []).map((cy: any, cyIdx: number) => ({
-            ...cy,
-            numero: typeof cy.numero === "number" ? cy.numero : cyIdx + 1,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            seances: (Array.isArray(cy.seances) ? cy.seances : []).map((s: any, si: number) => ({
-              ...s,
-              numero: typeof s.numero === "number" ? s.numero : si + 1,
-              jour: typeof s.jour === "string" ? s.jour : "",
-              datePrevu: typeof s.datePrevu === "string" ? s.datePrevu : typeof s.date === "string" ? s.date : todayStr(),
-            })),
-          })),
-        }));
+        const data = await r.json() as any[];
 
-        const ready = migrated.map(c => {
-          if (c.cycles.length === 0) return c;
-          const i = c.cycles.length - 1;
-          const updated = updateCycleSeances(c.cycles[i], c);
-          return { ...c, cycles: [...c.cycles.slice(0, i), updated] };
-        });
+        if (data.length === 0) {
+          // One-time migration from localStorage
+          const raw = localStorage.getItem("alma_cours");
+          if (raw) {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const localRaw = JSON.parse(raw) as any[];
+              if (localRaw.length > 0) {
+                const localReady = normalizeCours(localRaw).map(applyAutoExtend);
+                await Promise.all(localReady.map(c =>
+                  fetch("/api/cours", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(c),
+                  })
+                ));
+                localStorage.removeItem("alma_cours");
+                setCours(localReady);
+                setMigratedToast(true);
+                setLoaded(true);
+                return;
+              }
+            } catch { /* ignore malformed localStorage data */ }
+          }
+        }
 
+        const formatted = normalizeCours(data);
+        const ready = formatted.map(applyAutoExtend);
         setCours(ready);
 
         // Persist any auto-extended cycles back to the API
         ready.forEach((c, i) => {
-          if (JSON.stringify(c.cycles) !== JSON.stringify(migrated[i]?.cycles)) {
+          if (JSON.stringify(c.cycles) !== JSON.stringify(formatted[i]?.cycles)) {
             fetch(`/api/cours/${c.id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
@@ -167,12 +202,19 @@ export default function CoursPage() {
         });
 
         setLoaded(true);
-      })
-      .catch(() => {
+      } catch {
         setError("Impossible de charger les cours");
         setLoaded(true);
-      });
+      }
+    };
+    load();
   }, []);
+
+  useEffect(() => {
+    if (!migratedToast) return;
+    const t = setTimeout(() => setMigratedToast(false), 4000);
+    return () => clearTimeout(t);
+  }, [migratedToast]);
 
   // PUT one cours to the API (fire-and-forget)
   const persist = (c: CoursParticulier) => {
@@ -977,6 +1019,14 @@ export default function CoursPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ══ Migration toast ════════════════════════════════════════════════ */}
+      {migratedToast && (
+        <div className="fixed bottom-24 left-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-semibold shadow-xl"
+          style={{ transform: "translateX(-50%)", background: "linear-gradient(135deg, #7c3aed, #ec4899)", whiteSpace: "nowrap" }}>
+          ✅ Cours migrés vers la base de données !
+        </div>
+      )}
 
       {/* ══ Edit date dialog ════════════════════════════════════════════════ */}
       <Dialog open={editDateDialog !== null} onOpenChange={o => { if (!o) setEditDateDialog(null); }}>
