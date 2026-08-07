@@ -148,12 +148,14 @@ export default function HomePage() {
           ALMA
         </span>
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-base"
-            style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)" }}
-          >
-            👧
-          </div>
+          <Link href="/perso">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform"
+              style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)" }}
+            >
+              👧
+            </div>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex items-center justify-center w-8 h-8 rounded-full active:scale-90 transition-transform"
