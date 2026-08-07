@@ -20,7 +20,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CartableItem, Badge } from "@/lib/types";
-import { getCartableItems, saveCartableItems, getGameStats, getDevoirs, getBadges, saveBadges } from "@/lib/storage";
+import {
+  getCartableItems, saveCartableItems,
+  getCartableSelection, saveCartableSelection,
+  getCartableChecked, saveCartableChecked,
+  getGameStats, getDevoirs, getBadges, saveBadges,
+} from "@/lib/storage";
 import { CATEGORIES_CARTABLE } from "@/lib/constants";
 import { checkAndUnlockBadges } from "@/lib/badges";
 
@@ -29,9 +34,14 @@ const BURST_COLORS = [
   "#60A5FA", "#A78BFA", "#F472B6", "#FCA5A5",
 ];
 
+function todayStr() {
+  return new Date().toISOString().split("T")[0];
+}
+
 export default function CartablePage() {
   const [items, setItems] = useState<CartableItem[]>([]);
-  const [checked, setChecked] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ label: "", categorie: "École" });
@@ -40,26 +50,37 @@ export default function CartablePage() {
   const wasAllDone = useRef(false);
 
   useEffect(() => {
-    const savedItems = getCartableItems();
-    setItems(savedItems);
+    setItems(getCartableItems());
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const savedDate = localStorage.getItem("alma_cartable_date");
-    if (savedDate !== todayStr) {
-      setChecked([]);
-      localStorage.setItem("alma_cartable_date", todayStr);
-      localStorage.removeItem("alma_cartable_checked");
+    const today = todayStr();
+
+    const sel = getCartableSelection();
+    setSelectedIds(sel.selectedIds);
+
+    const chk = getCartableChecked();
+    if (chk.date !== today) {
+      saveCartableChecked({ date: today, checkedIds: [] });
+      setCheckedIds([]);
     } else {
-      const raw = localStorage.getItem("alma_cartable_checked");
-      setChecked(raw ? (JSON.parse(raw) as string[]) : []);
+      setCheckedIds(chk.checkedIds);
     }
+
     setLoaded(true);
   }, []);
 
-  const total = items.length;
-  const done = checked.length;
+  const total = selectedIds.length;
+  const done = checkedIds.filter((id) => selectedIds.includes(id)).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const allDone = total > 0 && done === total;
+
+  const statusMessage =
+    total === 0
+      ? "Prépare ton cartable ce soir 🌙"
+      : done === 0
+      ? `C'est parti ! ${total} article${total > 1 ? "s" : ""} à mettre`
+      : pct < 100
+      ? `Continue ! ${total - done} restant${total - done > 1 ? "s" : ""}`
+      : "Cartable prêt ! Bravo ! 🎉";
 
   useEffect(() => {
     if (allDone && !wasAllDone.current) {
@@ -79,15 +100,21 @@ export default function CartablePage() {
     wasAllDone.current = allDone;
   }, [allDone]);
 
-  const persistChecked = (next: string[]) => {
-    setChecked(next);
-    localStorage.setItem("alma_cartable_checked", JSON.stringify(next));
+  const toggleChecked = (id: string) => {
+    const next = checkedIds.includes(id)
+      ? checkedIds.filter((x) => x !== id)
+      : [...checkedIds, id];
+    setCheckedIds(next);
+    saveCartableChecked({ date: todayStr(), checkedIds: next });
   };
 
-  const toggle = (id: string) =>
-    persistChecked(
-      checked.includes(id) ? checked.filter((x) => x !== id) : [...checked, id]
-    );
+  const toggleSelected = (id: string) => {
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter((x) => x !== id)
+      : [...selectedIds, id];
+    setSelectedIds(next);
+    saveCartableSelection({ date: todayStr(), selectedIds: next });
+  };
 
   const handleAdd = () => {
     if (!form.label) return;
@@ -100,13 +127,20 @@ export default function CartablePage() {
 
   const handleDelete = (id: string) => {
     if (!window.confirm("Supprimer cet élément ?")) return;
-    const next = items.filter((i) => i.id !== id);
-    setItems(next);
-    saveCartableItems(next);
-    persistChecked(checked.filter((x) => x !== id));
+    const nextItems = items.filter((i) => i.id !== id);
+    setItems(nextItems);
+    saveCartableItems(nextItems);
+    const nextSel = selectedIds.filter((x) => x !== id);
+    setSelectedIds(nextSel);
+    saveCartableSelection({ date: todayStr(), selectedIds: nextSel });
+    const nextChk = checkedIds.filter((x) => x !== id);
+    setCheckedIds(nextChk);
+    saveCartableChecked({ date: todayStr(), checkedIds: nextChk });
   };
 
   if (!loaded) return null;
+
+  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
 
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
@@ -121,90 +155,82 @@ export default function CartablePage() {
           Ajouter
         </button>
       </div>
-      <p className="text-sm mb-6" style={{ color: "#6d28d9" }}>Prépare ton cartable pour demain</p>
+      <p className="text-sm mb-6 font-semibold" style={{ color: "#6d28d9" }}>{statusMessage}</p>
 
       {/* Progress */}
-      <div
-        className="rounded-3xl p-4 mb-6"
-        style={{
-          background: "#ffffff",
-          border: "1px solid rgba(139,92,246,0.2)",
-          boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
-        }}
-      >
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-semibold" style={{ color: "#3b0764" }}>
-            {done}/{total} éléments prêts
-          </span>
-          <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>{pct}%</span>
-        </div>
-        <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.3)" }}>
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: "linear-gradient(90deg, #7c3aed, #ec4899)" }}
-          />
-        </div>
-      </div>
-
-      {/* Checklist */}
-      <div className="flex flex-col gap-3">
-        {items.map((item) => {
-          const isChecked = checked.includes(item.id);
-          return (
+      {total > 0 && (
+        <div
+          className="rounded-3xl p-4 mb-6"
+          style={{
+            background: "#ffffff",
+            border: "1px solid rgba(139,92,246,0.2)",
+            boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+          }}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-semibold" style={{ color: "#3b0764" }}>
+              {done}/{total} éléments prêts
+            </span>
+            <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>{pct}%</span>
+          </div>
+          <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.3)" }}>
             <div
-              key={item.id}
-              className="rounded-3xl p-4 flex items-center gap-4 transition-all"
-              style={{
-                background: isChecked ? "rgba(134,239,172,0.1)" : "#ffffff",
-                border: `1px solid ${isChecked ? "rgba(134,239,172,0.3)" : "rgba(139,92,246,0.2)"}`,
-                boxShadow: "0 2px 8px rgba(124,58,237,0.08)",
-              }}
-            >
-              <button
-                onClick={() => toggle(item.id)}
-                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
-                style={
-                  isChecked
-                    ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", border: "none" }
-                    : { border: "2px solid rgba(124,58,237,0.3)", background: "transparent" }
-                }
-              >
-                {isChecked && (
-                  <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
-                    <path
-                      d="M1.5 5L5 8.5L11.5 1"
-                      stroke="white"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </button>
-              <span
-                className="font-semibold text-base flex-1"
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pct}%`, background: "linear-gradient(90deg, #7c3aed, #ec4899)" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Checklist — selected items only */}
+      {total > 0 && (
+        <div className="flex flex-col gap-3 mb-8">
+          {selectedItems.map((item) => {
+            const isChecked = checkedIds.includes(item.id);
+            return (
+              <div
+                key={item.id}
+                className="rounded-3xl p-4 flex items-center gap-4 transition-all"
                 style={{
-                  color: isChecked ? "#16a34a" : "#3b0764",
-                  textDecoration: isChecked ? "line-through" : "none",
+                  background: isChecked ? "rgba(134,239,172,0.1)" : "#ffffff",
+                  border: `1px solid ${isChecked ? "rgba(134,239,172,0.3)" : "rgba(139,92,246,0.2)"}`,
+                  boxShadow: "0 2px 8px rgba(124,58,237,0.08)",
                 }}
               >
-                {item.label}
-              </span>
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                <button
+                  onClick={() => toggleChecked(item.id)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+                  style={
+                    isChecked
+                      ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", border: "none" }
+                      : { border: "2px solid rgba(124,58,237,0.3)", background: "transparent" }
+                  }
+                >
+                  {isChecked && (
+                    <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+                      <path d="M1.5 5L5 8.5L11.5 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+                <span
+                  className="font-semibold text-base flex-1"
+                  style={{
+                    color: isChecked ? "#16a34a" : "#3b0764",
+                    textDecoration: isChecked ? "line-through" : "none",
+                  }}
+                >
+                  {item.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* 100% celebration */}
       {allDone && (
         <div
-          className="mt-8 text-center rounded-3xl py-8 px-4"
+          className="mt-2 mb-8 text-center rounded-3xl py-8 px-4"
           style={{
             background: "rgba(124,58,237,0.08)",
             border: "1px solid rgba(236,72,153,0.3)",
@@ -235,7 +261,58 @@ export default function CartablePage() {
         </div>
       )}
 
-      {/* ── BADGE TOAST ── */}
+      {/* Master list — select which items to bring */}
+      <div className="mb-4">
+        <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#9ca3af" }}>
+          Tous les articles
+        </p>
+        <div className="flex flex-col gap-3">
+          {items.map((item) => {
+            const isSelected = selectedIds.includes(item.id);
+            return (
+              <div
+                key={item.id}
+                className="rounded-3xl p-4 flex items-center gap-4 transition-all"
+                style={{
+                  background: isSelected ? "rgba(124,58,237,0.06)" : "#ffffff",
+                  border: `1px solid ${isSelected ? "rgba(124,58,237,0.25)" : "rgba(139,92,246,0.1)"}`,
+                  boxShadow: "0 1px 4px rgba(124,58,237,0.06)",
+                }}
+              >
+                <button
+                  onClick={() => toggleSelected(item.id)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+                  style={
+                    isSelected
+                      ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", border: "none" }
+                      : { border: "2px solid rgba(124,58,237,0.2)", background: "transparent" }
+                  }
+                >
+                  {isSelected && (
+                    <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+                      <path d="M1.5 5L5 8.5L11.5 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+                <span
+                  className="font-semibold text-base flex-1"
+                  style={{ color: isSelected ? "#7c3aed" : "#6b7280" }}
+                >
+                  {item.label}
+                </span>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Badge toast */}
       <AnimatePresence>
         {badgeToast && (
           <motion.div
