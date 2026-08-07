@@ -127,3 +127,17 @@ export const planningSlots = pgTable("planning_slots", {
   colorClass: text("color_class").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const coursParticuliers = pgTable('cours_particuliers', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  nom: text('nom').notNull(),
+  matieres: text('matieres').notNull(),
+  montant: integer('montant').notNull().default(0),
+  devise: text('devise').notNull().default('DT'),
+  seancesParCycle: integer('seances_par_cycle').notNull().default(12),
+  jours: text('jours').notNull().default('[]'),
+  dateDebut: text('date_debut').notNull(),
+  cycles: text('cycles').notNull().default('[]'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
