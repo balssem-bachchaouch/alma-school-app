@@ -881,7 +881,7 @@ export default function CoursPage() {
               return (
                 <div className="flex flex-col gap-1.5">
                   <Label style={{ color: "#3b0764" }}>Matière <span className="font-normal text-xs" style={{ color: "#9ca3af" }}>(optionnel)</span></Label>
-                  <Select value={editSeanceDialog?.matiere ?? ""} onValueChange={v => setEditSeanceDialog(d => d ? { ...d, matiere: v } : d)}>
+                  <Select value={editSeanceDialog?.matiere ?? ""} onValueChange={v => setEditSeanceDialog(d => d ? { ...d, matiere: v ?? "" } : d)}>
                     <SelectTrigger className="rounded-2xl"><SelectValue placeholder="— Choisir —" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">— Aucune —</SelectItem>
