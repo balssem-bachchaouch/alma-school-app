@@ -182,34 +182,49 @@ export default function PlanningPage() {
                   )}
                 </div>
                 <div className="flex flex-col gap-2">
-                  {daySlots.map((slot) => (
-                    <div
-                      key={slot.id}
-                      className={`rounded-2xl px-4 py-3 border ${slot.colorClass} flex items-center justify-between`}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">{slot.titre}</span>
-                        <span className="text-xs" style={{ color: "#6d28d9" }}>
-                          {slot.startTime} – {slot.endTime}
-                        </span>
+                  {daySlots.map((slot) => {
+                    const colorHex = SLOT_COLORS.find((c) => c.classes === slot.colorClass)?.hex ?? "#7c3aed";
+                    return (
+                      <div
+                        key={slot.id}
+                        className="flex items-center justify-between px-4 py-3"
+                        style={{
+                          background: "#ffffff",
+                          borderLeft: `4px solid ${colorHex}`,
+                          borderRadius: "16px",
+                          boxShadow: "0 2px 8px rgba(124,58,237,0.1)",
+                        }}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <span className="font-bold text-sm" style={{ color: "#3b0764" }}>{slot.titre}</span>
+                          <span className="text-xs" style={{ color: "#6d28d9" }}>
+                            {slot.startTime} – {slot.endTime}
+                          </span>
+                          <span
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full w-fit"
+                            style={{ background: `${colorHex}22`, color: "#3b0764" }}
+                          >
+                            {slot.categorie}
+                          </span>
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => openEdit(slot)}
+                            className="p-2.5 rounded-xl active:scale-90 transition-transform"
+                            style={{ color: "#7c3aed" }}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(slot.id)}
+                            className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => openEdit(slot)}
-                          className="p-2.5 rounded-xl active:scale-90 transition-transform"
-                          style={{ color: "#7c3aed" }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(slot.id)}
-                          className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {daySlots.length === 0 && (
                     <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
                       Aucun cours
