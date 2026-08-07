@@ -189,7 +189,7 @@ export default function PlanningPage() {
                     >
                       <div className="flex flex-col">
                         <span className="font-semibold text-sm">{slot.titre}</span>
-                        <span className="text-xs opacity-70">
+                        <span className="text-xs" style={{ color: "#6d28d9" }}>
                           {slot.startTime} – {slot.endTime}
                         </span>
                       </div>

@@ -183,7 +183,7 @@ export default function CartablePage() {
             <span className="text-sm font-semibold" style={{ color: "#3b0764" }}>
               {done}/{total} éléments prêts
             </span>
-            <span className="text-sm font-bold" style={{ color: "#7c3aed" }}>{pct}%</span>
+            <span className="text-sm font-bold" style={{ color: "#3b0764" }}>{pct}%</span>
           </div>
           <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.3)" }}>
             <div
@@ -297,7 +297,7 @@ export default function CartablePage() {
           </DialogHeader>
           <div className="flex flex-col gap-2 py-2 max-h-80 overflow-y-auto">
             {items.length === 0 && (
-              <p className="text-sm text-center py-4" style={{ color: "#9ca3af" }}>
+              <p className="text-sm text-center py-4" style={{ color: "#4c1d95" }}>
                 Aucun article — ajoute-en via ⚙️ Articles.
               </p>
             )}
@@ -356,7 +356,7 @@ export default function CartablePage() {
           {/* Existing items list */}
           <div className="flex flex-col gap-1 max-h-48 overflow-y-auto py-1">
             {items.length === 0 && (
-              <p className="text-sm text-center py-3" style={{ color: "#9ca3af" }}>Aucun article pour l'instant.</p>
+              <p className="text-sm text-center py-3" style={{ color: "#4c1d95" }}>Aucun article pour l'instant.</p>
             )}
             {items.map((item) => (
               <div key={item.id} className="flex items-center gap-3 px-2 py-2 rounded-xl" style={{ borderBottom: "1px solid rgba(139,92,246,0.08)" }}>

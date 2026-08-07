@@ -204,7 +204,7 @@ export default function DevoirsPage() {
       )}
 
       {!loading && !error && sortedGroups.length === 0 && (
-        <p className="text-center mt-16 text-lg" style={{ color: "#7c3aed" }}>Aucun devoir 🎉</p>
+        <p className="text-center mt-16 text-lg" style={{ color: "#4c1d95" }}>Aucun devoir 🎉</p>
       )}
 
       {!loading && !error && sortedGroups.map(([label, items]) => (
