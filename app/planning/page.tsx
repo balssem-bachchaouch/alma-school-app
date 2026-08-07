@@ -187,12 +187,13 @@ export default function PlanningPage() {
                     return (
                       <div
                         key={slot.id}
-                        className="flex items-center justify-between px-4 py-3"
+                        className="flex items-center justify-between"
                         style={{
                           background: "#ffffff",
                           borderLeft: `4px solid ${colorHex}`,
                           borderRadius: "16px",
                           boxShadow: "0 2px 8px rgba(124,58,237,0.1)",
+                          padding: "12px 14px",
                         }}
                       >
                         <div className="flex flex-col gap-1">
