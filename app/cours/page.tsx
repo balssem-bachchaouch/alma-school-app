@@ -12,7 +12,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CoursParticulier, CoursCycle, CoursSeance } from "@/lib/types";
-import { getCours, saveCours } from "@/lib/storage";
 import {
   generateSeances, updateCycleSeances, isCycleComplete, formatDateFr, formatDateFrShort,
 } from "@/lib/coursUtils";
@@ -104,6 +103,7 @@ function MatiereToggle({ matieres, onToggle }: { matieres: string[]; onToggle: (
 export default function CoursPage() {
   const [cours, setCours] = useState<CoursParticulier[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewCycleIdx, setViewCycleIdx] = useState<Record<string, number>>({});
 
@@ -120,41 +120,75 @@ export default function CoursPage() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw = getCours() as any[];
-    const migrated: CoursParticulier[] = raw.map((c) => ({
-      ...c,
-      matieres: Array.isArray(c.matieres) ? c.matieres : typeof c.matiere === "string" ? [c.matiere] : ["Autre"],
-      jours: Array.isArray(c.jours) ? c.jours : [],
-      dateDebut: typeof c.dateDebut === "string" ? c.dateDebut : todayStr(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cycles: (Array.isArray(c.cycles) ? c.cycles : []).map((cy: any, cyIdx: number) => ({
-        ...cy,
-        numero: typeof cy.numero === "number" ? cy.numero : cyIdx + 1,
+    fetch("/api/cours")
+      .then(r => {
+        if (!r.ok) throw new Error("fetch");
+        return r.json() as Promise<CoursParticulier[]>;
+      })
+      .then(data => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        seances: (Array.isArray(cy.seances) ? cy.seances : []).map((s: any, si: number) => ({
-          ...s,
-          numero: typeof s.numero === "number" ? s.numero : si + 1,
-          jour: typeof s.jour === "string" ? s.jour : "",
-          datePrevu: typeof s.datePrevu === "string" ? s.datePrevu : typeof s.date === "string" ? s.date : todayStr(),
-        })),
-      })),
-    }));
+        const migrated: CoursParticulier[] = (data as any[]).map((c) => ({
+          ...c,
+          matieres: Array.isArray(c.matieres) ? c.matieres : typeof c.matiere === "string" ? [c.matiere] : ["Autre"],
+          jours: Array.isArray(c.jours) ? c.jours : [],
+          dateDebut: typeof c.dateDebut === "string" ? c.dateDebut : todayStr(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          cycles: (Array.isArray(c.cycles) ? c.cycles : []).map((cy: any, cyIdx: number) => ({
+            ...cy,
+            numero: typeof cy.numero === "number" ? cy.numero : cyIdx + 1,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            seances: (Array.isArray(cy.seances) ? cy.seances : []).map((s: any, si: number) => ({
+              ...s,
+              numero: typeof s.numero === "number" ? s.numero : si + 1,
+              jour: typeof s.jour === "string" ? s.jour : "",
+              datePrevu: typeof s.datePrevu === "string" ? s.datePrevu : typeof s.date === "string" ? s.date : todayStr(),
+            })),
+          })),
+        }));
 
-    // Ensure current cycle of each cours has enough future séances
-    const ready = migrated.map(c => {
-      if (c.cycles.length === 0) return c;
-      const i = c.cycles.length - 1;
-      const updated = updateCycleSeances(c.cycles[i], c);
-      return { ...c, cycles: [...c.cycles.slice(0, i), updated] };
-    });
+        const ready = migrated.map(c => {
+          if (c.cycles.length === 0) return c;
+          const i = c.cycles.length - 1;
+          const updated = updateCycleSeances(c.cycles[i], c);
+          return { ...c, cycles: [...c.cycles.slice(0, i), updated] };
+        });
 
-    setCours(ready);
-    saveCours(ready);
-    setLoaded(true);
+        setCours(ready);
+
+        // Persist any auto-extended cycles back to the API
+        ready.forEach((c, i) => {
+          if (JSON.stringify(c.cycles) !== JSON.stringify(migrated[i]?.cycles)) {
+            fetch(`/api/cours/${c.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(c),
+            });
+          }
+        });
+
+        setLoaded(true);
+      })
+      .catch(() => {
+        setError("Impossible de charger les cours");
+        setLoaded(true);
+      });
   }, []);
 
-  const save = (next: CoursParticulier[]) => { setCours(next); saveCours(next); };
+  // PUT one cours to the API (fire-and-forget)
+  const persist = (c: CoursParticulier) => {
+    fetch(`/api/cours/${c.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(c),
+    });
+  };
+
+  // Update state and persist the changed cours
+  const save = (next: CoursParticulier[], changedId: string) => {
+    setCours(next);
+    const changed = next.find(x => x.id === changedId);
+    if (changed) persist(changed);
+  };
 
   const toggleJour = (idx: number) => setForm(f => ({
     ...f, jours: f.jours.includes(idx) ? f.jours.filter(j => j !== idx) : [...f.jours, idx],
@@ -169,13 +203,19 @@ export default function CoursPage() {
     if (!form.nom || !form.montant || form.jours.length === 0) return;
     const n = Math.max(1, parseInt(form.seancesParCycle) || 12);
     const start = form.dateDebut || todayStr();
-    save([...cours, {
+    const newCours: CoursParticulier = {
       id: crypto.randomUUID(), nom: form.nom,
       matieres: form.matieres.length > 0 ? form.matieres : ["Autre"],
       montant: parseFloat(form.montant), devise: form.devise, seancesParCycle: n,
       jours: [...form.jours].sort((a, b) => a - b), dateDebut: start,
       cycles: [createFirstCycle(n, form.jours, start)],
-    }]);
+    };
+    setCours(prev => [...prev, newCours]);
+    fetch("/api/cours", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newCours),
+    });
     setForm(DEFAULT_FORM);
     setAddOpen(false);
   };
@@ -189,7 +229,7 @@ export default function CoursPage() {
 
   const handleEdit = () => {
     if (!editingId || !form.nom || !form.montant || form.jours.length === 0) return;
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== editingId) return c;
       const newJours = [...form.jours].sort((a, b) => a - b);
       const newSpc = Math.max(1, parseInt(form.seancesParCycle) || 12);
@@ -209,12 +249,14 @@ export default function CoursPage() {
         montant: parseFloat(form.montant), devise: form.devise, seancesParCycle: newSpc,
         jours: newJours, dateDebut: form.dateDebut || c.dateDebut,
         cycles: [...c.cycles.slice(0, -1), updatedCy] };
-    }));
+    });
+    save(next, editingId);
     setEditOpen(false); setEditingId(null);
   };
 
   const handleDelete = (id: string) => {
-    save(cours.filter(c => c.id !== id));
+    setCours(prev => prev.filter(c => c.id !== id));
+    fetch(`/api/cours/${id}`, { method: "DELETE" });
     setDeleteConfirmId(null);
     if (expandedId === id) setExpandedId(null);
   };
@@ -222,7 +264,7 @@ export default function CoursPage() {
   // ── Séance toggle + auto-extend ────────────────────────────────────────
 
   const toggleSeance = (coursId: string, cycleId: string, seanceId: string) => {
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== coursId) return c;
       return {
         ...c,
@@ -230,14 +272,14 @@ export default function CoursPage() {
           if (cy.id !== cycleId) return cy;
           const toggled = { ...cy, seances: cy.seances.map(s => s.id === seanceId ? { ...s, done: !s.done } : s) };
           const nowUnchecked = toggled.seances.find(s => s.id === seanceId)?.done === false;
-          // On uncheck: add a compensation séance so the cycle can still reach its target
           if (nowUnchecked && !isCycleComplete(toggled, c.seancesParCycle)) {
             return appendCompensation(toggled, c);
           }
           return toggled;
         }),
       };
-    }));
+    });
+    save(next, coursId);
   };
 
   // ── New cycle (with payment) ───────────────────────────────────────────
@@ -262,7 +304,7 @@ export default function CoursPage() {
       seances: generateSeances(c.jours, c.seancesParCycle, nd.toISOString().split("T")[0]),
       paid: false,
     };
-    save(cours.map(co => {
+    const next = cours.map(co => {
       if (co.id !== coursId) return co;
       return {
         ...co,
@@ -275,8 +317,8 @@ export default function CoursPage() {
           newCycle,
         ],
       };
-    }));
-    // Switch view to new cycle
+    });
+    save(next, coursId);
     setViewCycleIdx(prev => ({ ...prev, [coursId]: c.cycles.length }));
     setNewCycleDialog(null);
   };
@@ -290,7 +332,7 @@ export default function CoursPage() {
   const confirmPayment = () => {
     if (!paymentDialog) return;
     const { coursId, cycleId, montant, date, prochaineDate } = paymentDialog;
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== coursId) return c;
       return {
         ...c, cycles: c.cycles.map(cy => cy.id !== cycleId ? cy : {
@@ -299,7 +341,8 @@ export default function CoursPage() {
           ...(prochaineDate ? { prochaineDate } : {}),
         }),
       };
-    }));
+    });
+    save(next, coursId);
     setPaymentDialog(null);
   };
 
@@ -309,7 +352,7 @@ export default function CoursPage() {
     if (!addSeanceDialog?.date) return;
     const { coursId, cycleId, date, statut } = addSeanceDialog;
     const jour = dateToJour(date);
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== coursId) return c;
       return {
         ...c, cycles: c.cycles.map(cy => {
@@ -320,7 +363,8 @@ export default function CoursPage() {
           return updateCycleSeances({ ...cy, seances: renumbered }, c);
         }),
       };
-    }));
+    });
+    save(next, coursId);
     setAddSeanceDialog(null);
   };
 
@@ -329,7 +373,7 @@ export default function CoursPage() {
   const deleteSeance = () => {
     if (!deleteSeanceDialog) return;
     const { coursId, cycleId, seanceId } = deleteSeanceDialog;
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== coursId) return c;
       return {
         ...c, cycles: c.cycles.map(cy => {
@@ -340,7 +384,8 @@ export default function CoursPage() {
           return updateCycleSeances({ ...cy, seances: filtered }, c);
         }),
       };
-    }));
+    });
+    save(next, coursId);
     setDeleteSeanceDialog(null);
   };
 
@@ -350,7 +395,7 @@ export default function CoursPage() {
     if (!editSeanceDialog?.date) return;
     const { coursId, cycleId, seanceId, date, matiere } = editSeanceDialog;
     const jour = new Date(date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long" }).toUpperCase();
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== coursId) return c;
       return {
         ...c, cycles: c.cycles.map(cy => {
@@ -361,7 +406,8 @@ export default function CoursPage() {
           return { ...cy, seances: updated.map((s, i) => ({ ...s, numero: i + 1 })) };
         }),
       };
-    }));
+    });
+    save(next, coursId);
     setEditSeanceDialog(null);
   };
 
@@ -371,7 +417,7 @@ export default function CoursPage() {
     if (!editDateDialog?.date) return;
     const { coursId, cycleId, seanceId, date } = editDateDialog;
     const jour = dateToJour(date);
-    save(cours.map(c => {
+    const next = cours.map(c => {
       if (c.id !== coursId) return c;
       return {
         ...c, cycles: c.cycles.map(cy => {
@@ -381,11 +427,27 @@ export default function CoursPage() {
           return { ...cy, seances: updated.map((s, i) => ({ ...s, numero: i + 1 })) };
         }),
       };
-    }));
+    });
+    save(next, coursId);
     setEditDateDialog(null);
   };
 
-  if (!loaded) return null;
+  if (!loaded) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        <div className="text-4xl mb-3" style={{ animation: "spin 1s linear infinite" }}>⏳</div>
+        <p className="text-sm font-semibold" style={{ color: "#6d28d9" }}>Chargement…</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="px-4 pt-16 text-center">
+      <div className="text-4xl mb-3">❌</div>
+      <p className="font-semibold mb-1" style={{ color: "#3b0764" }}>Erreur de chargement</p>
+      <p className="text-sm" style={{ color: "#6d28d9" }}>{error}</p>
+    </div>
+  );
 
   // ── Render ─────────────────────────────────────────────────────────────
 
