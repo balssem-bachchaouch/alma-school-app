@@ -150,3 +150,22 @@ export function getCours(): CoursParticulier[] {
 export function saveCours(cours: CoursParticulier[]): void {
   set("alma_cours", cours);
 }
+
+const DEFAULT_SELECTION = { date: "", selectedIds: [] as string[] };
+const DEFAULT_CHECKED = { date: "", checkedIds: [] as string[] };
+
+export function getCartableSelection(): { date: string; selectedIds: string[] } {
+  return get("alma_cartable_selection", DEFAULT_SELECTION);
+}
+
+export function saveCartableSelection(data: { date: string; selectedIds: string[] }): void {
+  set("alma_cartable_selection", data);
+}
+
+export function getCartableChecked(): { date: string; checkedIds: string[] } {
+  return get("alma_cartable_checked", DEFAULT_CHECKED);
+}
+
+export function saveCartableChecked(data: { date: string; checkedIds: string[] }): void {
+  set("alma_cartable_checked", data);
+}
