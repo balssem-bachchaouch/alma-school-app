@@ -159,7 +159,7 @@ export default function DevoirsPage() {
     const label = getDateLabel(d.dueDate);
     acc[label] = [...(acc[label] ?? []), d];
     return acc;
-  }, {});
+  }, { "Aujourd'hui": [], "Demain": [], "Après-demain": [] });
 
   const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
     const ai = DATE_ORDER.indexOf(a);
@@ -203,8 +203,26 @@ export default function DevoirsPage() {
         </div>
       )}
 
-      {!loading && !error && sortedGroups.length === 0 && (
-        <p className="text-center mt-16 text-lg" style={{ color: "#4c1d95" }}>Aucun devoir 🎉</p>
+      {!loading && !error && devoirs.length === 0 && (
+        <div
+          className="rounded-2xl py-12 px-6 text-center mt-8"
+          style={{
+            background: "#ffffff",
+            boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+            border: "1px solid rgba(139,92,246,0.15)",
+          }}
+        >
+          <p className="text-6xl mb-4">📚</p>
+          <p className="font-bold text-lg mb-1" style={{ color: "#3b0764" }}>Pas encore de devoirs !</p>
+          <p className="text-sm mb-6" style={{ color: "#6d28d9" }}>Ajoute ton premier devoir ici 🎉</p>
+          <button
+            onClick={openAdd}
+            className="px-5 py-2.5 rounded-2xl text-white font-bold text-sm active:scale-95 transition-transform"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+          >
+            + Ajouter un devoir
+          </button>
+        </div>
       )}
 
       {!loading && !error && sortedGroups.map(([label, items]) => (
@@ -212,67 +230,73 @@ export default function DevoirsPage() {
           <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#3b0764" }}>
             {label}
           </h2>
-          <div className="flex flex-col gap-3">
-            {items.map((d) => {
-              const cfg = getMatiereConfig(d.matiere);
-              return (
-                <div
-                  key={d.id}
-                  className={`relative rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
-                  style={CARD}
-                >
-                  <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
-                      {d.matiere}
-                    </span>
-                    <p className={`font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`} style={{ color: "#3b0764" }}>
-                      {d.titre}
-                    </p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Clock size={12} style={{ color: "#6d28d9" }} />
-                      <span className="text-xs" style={{ color: "#6d28d9" }}>{d.duree}</span>
+          {items.length === 0 ? (
+            <p className="text-sm text-center py-4" style={{ color: "#6d28d9" }}>
+              🎉 Aucun devoir — tu es libre !
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {items.map((d) => {
+                const cfg = getMatiereConfig(d.matiere);
+                return (
+                  <div
+                    key={d.id}
+                    className={`relative rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
+                    style={CARD}
+                  >
+                    <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
+                        {d.matiere}
+                      </span>
+                      <p className={`font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`} style={{ color: "#3b0764" }}>
+                        {d.titre}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock size={12} style={{ color: "#6d28d9" }} />
+                        <span className="text-xs" style={{ color: "#6d28d9" }}>{d.duree}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0 relative">
+                      <button
+                        onClick={() => openEdit(d)}
+                        className="p-2.5 rounded-xl active:scale-90 transition-transform"
+                        style={{ color: "#7c3aed" }}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(d.id)}
+                        className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                      <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative">
+                        {d.completed
+                          ? <CheckCircle2 size={28} className="text-green-500" />
+                          : <Circle size={28} style={{ color: "rgba(124,58,237,0.3)" }} />}
+                        <AnimatePresence>
+                          {coinToast === d.id && (
+                            <motion.span
+                              key="toast"
+                              initial={{ y: 0, opacity: 1 }}
+                              animate={{ y: -40, opacity: 0 }}
+                              exit={{}}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className="absolute left-1/2 -translate-x-1/2 bottom-full text-sm font-bold pointer-events-none whitespace-nowrap"
+                              style={{ color: "#f59e0b" }}
+                            >
+                              +10 🪙
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0 relative">
-                    <button
-                      onClick={() => openEdit(d)}
-                      className="p-2.5 rounded-xl active:scale-90 transition-transform"
-                      style={{ color: "#7c3aed" }}
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(d.id)}
-                      className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                    <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative">
-                      {d.completed
-                        ? <CheckCircle2 size={28} className="text-green-500" />
-                        : <Circle size={28} style={{ color: "rgba(124,58,237,0.3)" }} />}
-                      <AnimatePresence>
-                        {coinToast === d.id && (
-                          <motion.span
-                            key="toast"
-                            initial={{ y: 0, opacity: 1 }}
-                            animate={{ y: -40, opacity: 0 }}
-                            exit={{}}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className="absolute left-1/2 -translate-x-1/2 bottom-full text-sm font-bold pointer-events-none whitespace-nowrap"
-                            style={{ color: "#f59e0b" }}
-                          >
-                            +10 🪙
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ))}
 
