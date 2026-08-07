@@ -1,4 +1,4 @@
-import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge, CoursParticulier } from "./types";
+import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge, CoursParticulier, TachePerso, Note } from "./types";
 import { BADGES_CONFIG } from "./badges";
 
 export function get<T>(key: string, fallback: T): T {
@@ -168,4 +168,20 @@ export function getCartableChecked(): { date: string; checkedIds: string[] } {
 
 export function saveCartableChecked(data: { date: string; checkedIds: string[] }): void {
   set("alma_cartable_checked", data);
+}
+
+export function getTachesPerso(): TachePerso[] {
+  return get<TachePerso[]>("alma_taches_perso", []);
+}
+
+export function saveTachesPerso(taches: TachePerso[]): void {
+  set("alma_taches_perso", taches);
+}
+
+export function getNotes(): Note[] {
+  return get<Note[]>("alma_notes", []);
+}
+
+export function saveNotes(notes: Note[]): void {
+  set("alma_notes", notes);
 }
