@@ -69,3 +69,20 @@ export interface CoursParticulier {
   dateDebut: string;     // start date
   cycles: CoursCycle[];
 }
+
+export interface TachePerso {
+  id: string;
+  titre: string;
+  description?: string;
+  categorie: string;
+  completed: boolean;
+  createdAt: string;
+}
+
+export interface Note {
+  id: string;
+  titre: string;
+  contenu: string;
+  couleur: string;
+  updatedAt: string;
+}
