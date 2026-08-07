@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "L'app scolaire de tes rêves 🚀",
     start_url: "/",
     display: "standalone",
-    background_color: "#0a0520",
-    theme_color: "#8b5cf6",
+    background_color: "#c4b5fd",
+    theme_color: "#c4b5fd",
     orientation: "portrait",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
