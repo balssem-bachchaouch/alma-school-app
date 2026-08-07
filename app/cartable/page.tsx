@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -43,8 +43,9 @@ export default function CartablePage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ label: "", categorie: "École" });
+  const [openPreparer, setOpenPreparer] = useState(false);
+  const [openArticles, setOpenArticles] = useState(false);
+  const [form, setForm] = useState({ label: "", emoji: "", categorie: "École" });
   const [burstKey, setBurstKey] = useState(0);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
   const wasAllDone = useRef(false);
@@ -118,11 +119,13 @@ export default function CartablePage() {
 
   const handleAdd = () => {
     if (!form.label) return;
-    const next = [...items, { id: crypto.randomUUID(), label: form.label, categorie: form.categorie }];
+    const next: CartableItem[] = [
+      ...items,
+      { id: crypto.randomUUID(), label: form.label, emoji: form.emoji || undefined, categorie: form.categorie },
+    ];
     setItems(next);
     saveCartableItems(next);
-    setForm({ label: "", categorie: "École" });
-    setOpen(false);
+    setForm({ label: "", emoji: "", categorie: "École" });
   };
 
   const handleDelete = (id: string) => {
@@ -144,16 +147,25 @@ export default function CartablePage() {
 
   return (
     <div className="px-4 pt-8 pb-4 max-w-md mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>🎒 Mon Cartable</h1>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
-          style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
-        >
-          <Plus size={16} />
-          Ajouter
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setOpenPreparer(true)}
+            className="px-3 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+          >
+            ✏️ Préparer
+          </button>
+          <button
+            onClick={() => setOpenArticles(true)}
+            className="px-3 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+          >
+            ⚙️ Articles
+          </button>
+        </div>
       </div>
       <p className="text-sm mb-6 font-semibold" style={{ color: "#6d28d9" }}>{statusMessage}</p>
 
@@ -219,7 +231,7 @@ export default function CartablePage() {
                     textDecoration: isChecked ? "line-through" : "none",
                   }}
                 >
-                  {item.label}
+                  {item.emoji ? `${item.emoji} ` : ""}{item.label}
                 </span>
               </div>
             );
@@ -261,57 +273,6 @@ export default function CartablePage() {
         </div>
       )}
 
-      {/* Master list — select which items to bring */}
-      <div className="mb-4">
-        <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#9ca3af" }}>
-          Tous les articles
-        </p>
-        <div className="flex flex-col gap-3">
-          {items.map((item) => {
-            const isSelected = selectedIds.includes(item.id);
-            return (
-              <div
-                key={item.id}
-                className="rounded-3xl p-4 flex items-center gap-4 transition-all"
-                style={{
-                  background: isSelected ? "rgba(124,58,237,0.06)" : "#ffffff",
-                  border: `1px solid ${isSelected ? "rgba(124,58,237,0.25)" : "rgba(139,92,246,0.1)"}`,
-                  boxShadow: "0 1px 4px rgba(124,58,237,0.06)",
-                }}
-              >
-                <button
-                  onClick={() => toggleSelected(item.id)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
-                  style={
-                    isSelected
-                      ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", border: "none" }
-                      : { border: "2px solid rgba(124,58,237,0.2)", background: "transparent" }
-                  }
-                >
-                  {isSelected && (
-                    <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
-                      <path d="M1.5 5L5 8.5L11.5 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
-                <span
-                  className="font-semibold text-base flex-1"
-                  style={{ color: isSelected ? "#7c3aed" : "#6b7280" }}
-                >
-                  {item.label}
-                </span>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Badge toast */}
       <AnimatePresence>
         {badgeToast && (
@@ -328,25 +289,115 @@ export default function CartablePage() {
         )}
       </AnimatePresence>
 
-      {/* Add dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* ── Préparer dialog ── */}
+      <Dialog open={openPreparer} onOpenChange={setOpenPreparer}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
-            <DialogTitle style={{ color: "#3b0764" }}>Ajouter un élément</DialogTitle>
+            <DialogTitle style={{ color: "#3b0764" }}>Préparer mon cartable</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#3b0764" }}>Nom</Label>
-              <Input
-                className="rounded-2xl"
-                placeholder="Ex: Livre de maths"
-                value={form.label}
-                onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              />
+          <div className="flex flex-col gap-2 py-2 max-h-80 overflow-y-auto">
+            {items.length === 0 && (
+              <p className="text-sm text-center py-4" style={{ color: "#9ca3af" }}>
+                Aucun article — ajoute-en via ⚙️ Articles.
+              </p>
+            )}
+            {items.map((item) => {
+              const isSelected = selectedIds.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => toggleSelected(item.id)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-2xl cursor-pointer transition-all"
+                  style={{
+                    background: isSelected ? "rgba(124,58,237,0.08)" : "transparent",
+                    border: `1px solid ${isSelected ? "rgba(124,58,237,0.2)" : "transparent"}`,
+                  }}
+                >
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+                    style={
+                      isSelected
+                        ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)" }
+                        : { border: "2px solid rgba(124,58,237,0.25)", background: "transparent" }
+                    }
+                  >
+                    {isSelected && (
+                      <svg width="11" height="8" viewBox="0 0 13 10" fill="none">
+                        <path d="M1.5 5L5 8.5L11.5 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm flex-1" style={{ color: isSelected ? "#3b0764" : "#6b7280" }}>
+                    {item.emoji ? `${item.emoji} ` : ""}{item.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setOpenPreparer(false)}
+              className="w-full px-5 py-2.5 rounded-2xl text-white font-bold text-sm"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+            >
+              Valider
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Gérer articles dialog ── */}
+      <Dialog open={openArticles} onOpenChange={setOpenArticles}>
+        <DialogContent className="rounded-3xl mx-4 max-w-sm">
+          <DialogHeader>
+            <DialogTitle style={{ color: "#3b0764" }}>Gérer les articles</DialogTitle>
+          </DialogHeader>
+
+          {/* Existing items list */}
+          <div className="flex flex-col gap-1 max-h-48 overflow-y-auto py-1">
+            {items.length === 0 && (
+              <p className="text-sm text-center py-3" style={{ color: "#9ca3af" }}>Aucun article pour l'instant.</p>
+            )}
+            {items.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 px-2 py-2 rounded-xl" style={{ borderBottom: "1px solid rgba(139,92,246,0.08)" }}>
+                <span className="text-sm font-semibold flex-1" style={{ color: "#3b0764" }}>
+                  {item.emoji ? `${item.emoji} ` : ""}{item.label}
+                </span>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-1.5 rounded-lg active:scale-90 transition-transform text-red-500"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Add form */}
+          <div className="flex flex-col gap-3 pt-3" style={{ borderTop: "1px solid rgba(139,92,246,0.15)" }}>
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs" style={{ color: "#3b0764" }}>Emoji</Label>
+                <Input
+                  className="rounded-2xl w-20 text-center"
+                  placeholder="📚"
+                  value={form.emoji}
+                  onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1 flex-1">
+                <Label className="text-xs" style={{ color: "#3b0764" }}>Nom</Label>
+                <Input
+                  className="rounded-2xl"
+                  placeholder="Ex: Livre de maths"
+                  value={form.label}
+                  onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label style={{ color: "#3b0764" }}>Catégorie</Label>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs" style={{ color: "#3b0764" }}>Catégorie</Label>
               <Select
                 value={form.categorie}
                 onValueChange={(v) => setForm((f) => ({ ...f, categorie: v ?? f.categorie }))}
@@ -361,24 +412,15 @@ export default function CartablePage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <button
-              onClick={() => setOpen(false)}
-              className="px-4 py-2 rounded-2xl font-semibold text-sm"
-              style={{ color: "#7c3aed" }}
-            >
-              Annuler
-            </button>
             <button
               onClick={handleAdd}
               disabled={!form.label}
-              className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
+              className="w-full px-5 py-2.5 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
               style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
             >
-              Ajouter
+              + Ajouter
             </button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

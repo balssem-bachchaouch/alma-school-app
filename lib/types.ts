@@ -20,6 +20,7 @@ export interface PlanningSlot {
 export interface CartableItem {
   id: string;
   label: string;
+  emoji?: string;
   categorie: string;
 }
 
