@@ -32,13 +32,6 @@ function createFirstCycle(n: number, jours: number[], start: string): CoursCycle
   return { id: crypto.randomUUID(), numero: 1, seances: generateSeances(jours, n, start), paid: false };
 }
 
-function appendCompensation(cycle: CoursCycle, cours: CoursParticulier): CoursCycle {
-  const last = cycle.seances[cycle.seances.length - 1]?.datePrevu ?? todayStr();
-  const next = new Date(last + "T12:00:00");
-  next.setDate(next.getDate() + 1);
-  const [s] = generateSeances(cours.jours, 1, next.toISOString().split("T")[0], cycle.seances.length + 1);
-  return { ...cycle, seances: [...cycle.seances, s] };
-}
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -315,9 +308,13 @@ export default function CoursPage() {
         cycles: c.cycles.map(cy => {
           if (cy.id !== cycleId) return cy;
           const toggled = { ...cy, seances: cy.seances.map(s => s.id === seanceId ? { ...s, done: !s.done } : s) };
-          const nowUnchecked = toggled.seances.find(s => s.id === seanceId)?.done === false;
-          if (nowUnchecked && !isCycleComplete(toggled, c.seancesParCycle)) {
-            return appendCompensation(toggled, c);
+          const nowDone = toggled.seances.find(s => s.id === seanceId)?.done === true;
+          if (nowDone) {
+            const newDoneCount = toggled.seances.filter(s => s.done).length;
+            const newUndoneCount = toggled.seances.filter(s => !s.done).length;
+            if (newDoneCount < c.seancesParCycle && newUndoneCount === 0) {
+              return updateCycleSeances(toggled, c);
+            }
           }
           return toggled;
         }),
