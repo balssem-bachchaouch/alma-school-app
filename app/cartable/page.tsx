@@ -21,7 +21,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CartableItem, Badge } from "@/lib/types";
 import {
-  getCartableItems, saveCartableItems,
   getCartableSelection, saveCartableSelection,
   getCartableChecked, saveCartableChecked,
   getGameStats, getDevoirs, getBadges, saveBadges,
@@ -38,6 +37,24 @@ function todayStr() {
   return new Date().toISOString().split("T")[0];
 }
 
+async function fetchItems(): Promise<CartableItem[]> {
+  const res = await fetch("/api/cartable");
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function postItem(item: CartableItem): Promise<void> {
+  await fetch("/api/cartable", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+}
+
+async function deleteItem(id: string): Promise<void> {
+  await fetch(`/api/cartable/${id}`, { method: "DELETE" });
+}
+
 export default function CartablePage() {
   const [items, setItems] = useState<CartableItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -51,22 +68,43 @@ export default function CartablePage() {
   const wasAllDone = useRef(false);
 
   useEffect(() => {
-    setItems(getCartableItems());
+    (async () => {
+      const apiItems = await fetchItems();
 
-    const today = todayStr();
+      // Auto-migrate from localStorage if API is empty
+      if (apiItems.length === 0) {
+        const raw = localStorage.getItem("alma_cartable_items");
+        if (raw) {
+          try {
+            const local: CartableItem[] = JSON.parse(raw);
+            if (local.length > 0) {
+              await Promise.all(local.map(postItem));
+              localStorage.removeItem("alma_cartable_items");
+              setItems(local);
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
+      } else {
+        setItems(apiItems);
+      }
 
-    const sel = getCartableSelection();
-    setSelectedIds(sel.selectedIds);
+      const today = todayStr();
 
-    const chk = getCartableChecked();
-    if (chk.date !== today) {
-      saveCartableChecked({ date: today, checkedIds: [] });
-      setCheckedIds([]);
-    } else {
-      setCheckedIds(chk.checkedIds);
-    }
+      const sel = getCartableSelection();
+      setSelectedIds(sel.selectedIds);
 
-    setLoaded(true);
+      const chk = getCartableChecked();
+      if (chk.date !== today) {
+        saveCartableChecked({ date: today, checkedIds: [] });
+        setCheckedIds([]);
+      } else {
+        setCheckedIds(chk.checkedIds);
+      }
+
+      setLoaded(true);
+    })();
   }, []);
 
   const total = selectedIds.length;
@@ -117,28 +155,29 @@ export default function CartablePage() {
     saveCartableSelection({ date: todayStr(), selectedIds: next });
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.label) return;
-    const next: CartableItem[] = [
-      ...items,
-      { id: crypto.randomUUID(), label: form.label, emoji: form.emoji || undefined, categorie: form.categorie },
-    ];
-    setItems(next);
-    saveCartableItems(next);
+    const newItem: CartableItem = {
+      id: crypto.randomUUID(),
+      label: form.label,
+      emoji: form.emoji || undefined,
+      categorie: form.categorie,
+    };
+    setItems((prev) => [...prev, newItem]);
     setForm({ label: "", emoji: "", categorie: "École" });
+    await postItem(newItem);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm("Supprimer cet élément ?")) return;
-    const nextItems = items.filter((i) => i.id !== id);
-    setItems(nextItems);
-    saveCartableItems(nextItems);
+    setItems((prev) => prev.filter((i) => i.id !== id));
     const nextSel = selectedIds.filter((x) => x !== id);
     setSelectedIds(nextSel);
     saveCartableSelection({ date: todayStr(), selectedIds: nextSel });
     const nextChk = checkedIds.filter((x) => x !== id);
     setCheckedIds(nextChk);
     saveCartableChecked({ date: todayStr(), checkedIds: nextChk });
+    await deleteItem(id);
   };
 
   if (!loaded) return null;

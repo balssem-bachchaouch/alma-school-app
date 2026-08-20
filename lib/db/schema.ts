@@ -128,6 +128,15 @@ export const planningSlots = pgTable("planning_slots", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const cartableItems = pgTable('cartable_items', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  label: text('label').notNull(),
+  emoji: text('emoji').notNull().default('📦'),
+  categorie: text('categorie').notNull().default('École'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const coursParticuliers = pgTable('cours_particuliers', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
