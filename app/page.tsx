@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Circle, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
@@ -42,6 +43,7 @@ function streakLabel(streak: number): string {
 
 export default function HomePage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [devoirsLoading, setDevoirsLoading] = useState(true);
   const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
@@ -49,7 +51,19 @@ export default function HomePage() {
   const [celebrating, setCelebrating] = useState(false);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const initialized = useRef(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -151,14 +165,38 @@ export default function HomePage() {
           <Link href="/matieres" className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform" style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }} title="Matières">
             📚
           </Link>
-          <Link href="/perso">
-            <div
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setIsMenuOpen((v) => !v)}
               className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform"
               style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)" }}
             >
               👧
-            </div>
-          </Link>
+            </button>
+            {isMenuOpen && (
+              <div
+                className="absolute top-full right-0 mt-2 z-50 bg-white rounded-2xl p-2 min-w-[160px]"
+                style={{ boxShadow: "0 8px 24px rgba(124,58,237,0.18)", border: "1px solid rgba(139,92,246,0.15)" }}
+              >
+                <button
+                  onClick={() => { setIsMenuOpen(false); router.push("/perso"); }}
+                  className="block w-full text-left px-4 py-2.5 rounded-xl hover:bg-violet-50 font-semibold text-sm transition-colors"
+                  style={{ color: "#3b0764" }}
+                >
+                  ✨ Mon Espace
+                </button>
+                {session?.user?.role === "admin" && (
+                  <button
+                    onClick={() => { setIsMenuOpen(false); router.push("/admin"); }}
+                    className="block w-full text-left px-4 py-2.5 rounded-xl hover:bg-violet-50 font-semibold text-sm transition-colors"
+                    style={{ color: "#3b0764" }}
+                  >
+                    ⚙️ Admin
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex items-center justify-center w-8 h-8 rounded-full active:scale-90 transition-transform"
