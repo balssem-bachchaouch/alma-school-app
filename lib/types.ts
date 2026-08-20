@@ -55,7 +55,15 @@ export interface CoursCycle {
   seances: CoursSeance[];
   datePaiement?: string;
   montantPaye?: number;
+  prochaineDate?: string;
   paid: boolean;
+}
+
+export interface Matiere {
+  id: string;
+  nom: string;
+  emoji: string;
+  couleur: string;
 }
 
 export interface CoursParticulier {

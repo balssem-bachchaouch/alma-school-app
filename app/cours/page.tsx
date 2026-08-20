@@ -57,6 +57,7 @@ type AddSeanceDialog = { coursId: string; cycleId: string; date: string; statut:
 type EditDateDialog = { coursId: string; cycleId: string; seanceId: string; date: string };
 type DeleteSeanceDialog = { coursId: string; cycleId: string; seanceId: string; numero: number };
 type EditSeanceDialog = { coursId: string; cycleId: string; seanceId: string; date: string; matiere: string };
+type EditPaymentDialog = { coursId: string; cycleId: string; date: string; montant: string; devise: string; prochaineDate: string };
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ export default function CoursPage() {
   const [editDateDialog, setEditDateDialog] = useState<EditDateDialog | null>(null);
   const [deleteSeanceDialog, setDeleteSeanceDialog] = useState<DeleteSeanceDialog | null>(null);
   const [editSeanceDialog, setEditSeanceDialog] = useState<EditSeanceDialog | null>(null);
+  const [editPaymentDialog, setEditPaymentDialog] = useState<EditPaymentDialog | null>(null);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   useEffect(() => {
@@ -474,6 +476,25 @@ export default function CoursPage() {
     setEditDateDialog(null);
   };
 
+  // ── Edit payment date/amount ──────────────────────────────────────────
+
+  const confirmEditPayment = () => {
+    if (!editPaymentDialog) return;
+    const { coursId, cycleId, date, montant, prochaineDate } = editPaymentDialog;
+    const next = cours.map(c => {
+      if (c.id !== coursId) return c;
+      return {
+        ...c, cycles: c.cycles.map(cy => cy.id !== cycleId ? cy : {
+          ...cy, datePaiement: date,
+          montantPaye: parseFloat(montant) || c.montant,
+          ...(prochaineDate ? { prochaineDate } : {}),
+        }),
+      };
+    });
+    save(next, coursId);
+    setEditPaymentDialog(null);
+  };
+
   if (!loaded) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
@@ -577,9 +598,13 @@ export default function CoursPage() {
                         animate={{ width: `${pct}%` }} transition={{ duration: 0.4 }} />
                     </div>
                     {currentCycle.paid ? (
-                      <p className="text-xs font-semibold" style={{ color: "#16a34a" }}>
-                        💰 PAYÉ LE : {formatDateFrShort(currentCycle.datePaiement!)} — {currentCycle.montantPaye ?? c.montant} {c.devise}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs font-semibold" style={{ color: "#16a34a" }}>
+                          💰 PAYÉ LE : {formatDateFrShort(currentCycle.datePaiement!)} — {currentCycle.montantPaye ?? c.montant} {c.devise}
+                        </p>
+                        <button onClick={() => setEditPaymentDialog({ coursId: c.id, cycleId: currentCycle.id, date: currentCycle.datePaiement ?? todayStr(), montant: String(currentCycle.montantPaye ?? c.montant), devise: c.devise, prochaineDate: currentCycle.prochaineDate ?? "" })}
+                          className="text-xs active:scale-90 transition-transform" style={{ color: "#7c3aed" }}>✏️</button>
+                      </div>
                     ) : doneCount > 0 && !complete ? (
                       <button onClick={() => openPaymentDialog(c, currentCycle)}
                         className="text-xs font-bold px-3 py-1 rounded-xl text-white active:scale-95 transition-transform"
@@ -696,9 +721,13 @@ export default function CoursPage() {
                         <div className="px-3 py-2.5"
                           style={{ borderTop: "1px solid rgba(139,92,246,0.15)", background: viewedCycle.paid ? "rgba(134,239,172,0.08)" : "rgba(124,58,237,0.03)" }}>
                           {viewedCycle.paid ? (
-                            <span className="text-xs font-semibold" style={{ color: "#16a34a" }}>
-                              PAYÉ LE : {formatDateFrShort(viewedCycle.datePaiement!)} — {viewedCycle.montantPaye ?? c.montant} {c.devise} ✅
-                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-semibold" style={{ color: "#16a34a" }}>
+                                PAYÉ LE : {formatDateFrShort(viewedCycle.datePaiement!)} — {viewedCycle.montantPaye ?? c.montant} {c.devise} ✅
+                              </span>
+                              <button onClick={() => setEditPaymentDialog({ coursId: c.id, cycleId: viewedCycle.id, date: viewedCycle.datePaiement ?? todayStr(), montant: String(viewedCycle.montantPaye ?? c.montant), devise: c.devise, prochaineDate: viewedCycle.prochaineDate ?? "" })}
+                                className="text-xs active:scale-90 transition-transform shrink-0" style={{ color: "#7c3aed" }}>✏️</button>
+                            </div>
                           ) : isCurrentView ? (
                             <button onClick={() => openPaymentDialog(c, viewedCycle)}
                               className="text-xs font-bold px-4 py-1.5 rounded-xl text-white w-full active:scale-95 transition-transform"
@@ -1016,6 +1045,39 @@ export default function CoursPage() {
             <button onClick={() => setDeleteSeanceDialog(null)} className="px-4 py-2 rounded-2xl font-semibold text-sm" style={{ color: "#7c3aed" }}>Annuler</button>
             <button onClick={deleteSeance}
               className="px-5 py-2 rounded-2xl text-white font-bold text-sm" style={{ background: "#dc2626" }}>Supprimer</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ══ Edit payment dialog ════════════════════════════════════════════ */}
+      <Dialog open={editPaymentDialog !== null} onOpenChange={o => { if (!o) setEditPaymentDialog(null); }}>
+        <DialogContent className="rounded-3xl mx-4 max-w-sm">
+          <DialogHeader><DialogTitle style={{ color: "#3b0764" }}>✏️ Modifier le paiement</DialogTitle></DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <Label style={{ color: "#3b0764" }}>Date du paiement</Label>
+              <Input className="rounded-2xl" type="date" value={editPaymentDialog?.date ?? ""}
+                onChange={e => { const v = e.target.value; setEditPaymentDialog(d => d ? { ...d, date: v } : d); }} />
+            </div>
+            <div className="flex gap-3 items-end">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <Label style={{ color: "#3b0764" }}>Montant</Label>
+                <Input className="rounded-2xl" type="number" value={editPaymentDialog?.montant ?? ""}
+                  onChange={e => { const v = e.target.value; setEditPaymentDialog(d => d ? { ...d, montant: v } : d); }} />
+              </div>
+              <span className="pb-2 text-sm font-bold" style={{ color: "#6d28d9" }}>{editPaymentDialog?.devise ?? ""}</span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label style={{ color: "#3b0764" }}>Prochaine date prévue <span className="font-normal text-xs" style={{ color: "#9ca3af" }}>(optionnel)</span></Label>
+              <Input className="rounded-2xl" type="date" value={editPaymentDialog?.prochaineDate ?? ""}
+                onChange={e => { const v = e.target.value; setEditPaymentDialog(d => d ? { ...d, prochaineDate: v } : d); }} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <button onClick={() => setEditPaymentDialog(null)} className="px-4 py-2 rounded-2xl font-semibold text-sm" style={{ color: "#9ca3af" }}>Annuler</button>
+            <button onClick={confirmEditPayment} disabled={!editPaymentDialog?.date || !editPaymentDialog?.montant}
+              className="px-5 py-2 rounded-2xl text-white font-bold text-sm disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>Sauvegarder</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
