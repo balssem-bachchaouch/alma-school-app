@@ -21,7 +21,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Devoir, Badge } from "@/lib/types";
 import { getGameStats, saveGameStats, getBadges, saveBadges } from "@/lib/storage";
-import { getMatiereConfig, MATIERES, DUREES } from "@/lib/constants";
+import { getMatiereConfig, DUREES } from "@/lib/constants";
+import { getMatieres } from "@/lib/storage";
 import { updateStreak } from "@/lib/streak";
 import { checkAndUnlockBadges } from "@/lib/badges";
 
@@ -334,8 +335,8 @@ export default function DevoirsPage() {
                   <SelectValue placeholder="Choisir une matière" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MATIERES.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>{m.value}</SelectItem>
+                  {getMatieres().map((m) => (
+                    <SelectItem key={m.id} value={m.nom}>{m.emoji} {m.nom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

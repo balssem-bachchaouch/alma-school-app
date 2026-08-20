@@ -148,6 +148,9 @@ export default function HomePage() {
           ALMA
         </span>
         <div className="flex items-center gap-2">
+          <Link href="/matieres" className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform" style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }} title="Matières">
+            📚
+          </Link>
           <Link href="/perso">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform"

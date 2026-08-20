@@ -12,8 +12,13 @@ export const authConfig: NextAuthConfig = {
       if (isAuthPage) return isLoggedIn ? Response.redirect(new URL("/", nextUrl)) : true;
       return isLoggedIn;
     },
+    jwt({ token, user }) {
+      if (user) token.role = (user as { role?: string }).role;
+      return token;
+    },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
+      if (token.role) session.user.role = token.role as string;
       return session;
     },
   },

@@ -185,3 +185,23 @@ export function getNotes(): Note[] {
 export function saveNotes(notes: Note[]): void {
   set("alma_notes", notes);
 }
+
+const DEFAULT_MATIERES = [
+  { id: "m1", nom: "Mathématiques", emoji: "📐", couleur: "#fb923c" },
+  { id: "m2", nom: "Français", emoji: "📖", couleur: "#60a5fa" },
+  { id: "m3", nom: "Arabe", emoji: "✍️", couleur: "#4ade80" },
+  { id: "m4", nom: "Sciences", emoji: "🔬", couleur: "#a78bfa" },
+  { id: "m5", nom: "Anglais", emoji: "🌍", couleur: "#facc15" },
+  { id: "m6", nom: "Histoire-Géo", emoji: "🗺️", couleur: "#f472b6" },
+  { id: "m7", nom: "Autre", emoji: "📚", couleur: "#94a3b8" },
+];
+
+export interface MatiereItem { id: string; nom: string; emoji: string; couleur: string; }
+
+export function getMatieres(): MatiereItem[] {
+  return get<MatiereItem[]>("alma_matieres", DEFAULT_MATIERES);
+}
+
+export function saveMatieres(matieres: MatiereItem[]): void {
+  set("alma_matieres", matieres);
+}

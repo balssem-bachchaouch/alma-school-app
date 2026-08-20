@@ -15,8 +15,7 @@ import type { CoursParticulier, CoursCycle, CoursSeance } from "@/lib/types";
 import {
   generateSeances, updateCycleSeances, isCycleComplete, formatDateFr, formatDateFrShort,
 } from "@/lib/coursUtils";
-
-const MATIERES_OPTIONS = ["Mathématiques", "Français", "Arabe", "Anglais", "Sciences", "Autre"];
+import { getMatieres } from "@/lib/storage";
 const DEVISES = ["DT", "€", "$"];
 const JOURS_SHORT = ["LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM"];
 const JOURS_FULL = ["LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI", "DIMANCHE"];
@@ -78,13 +77,13 @@ function MatiereToggle({ matieres, onToggle }: { matieres: string[]; onToggle: (
     <div className="flex flex-col gap-1.5">
       <Label style={{ color: "#3b0764" }}>Matières</Label>
       <div className="flex gap-1.5 flex-wrap">
-        {MATIERES_OPTIONS.map((m) => (
-          <button key={m} type="button" onClick={() => onToggle(m)}
+        {getMatieres().map((m) => (
+          <button key={m.id} type="button" onClick={() => onToggle(m.nom)}
             className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-90"
-            style={matieres.includes(m)
+            style={matieres.includes(m.nom)
               ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff" }
               : { background: "rgba(124,58,237,0.08)", color: "#6d28d9", border: "1px solid rgba(124,58,237,0.2)" }}>
-            {m}
+            {m.emoji} {m.nom}
           </button>
         ))}
       </div>
