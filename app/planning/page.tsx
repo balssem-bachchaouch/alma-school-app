@@ -32,6 +32,15 @@ const EMPTY_FORM = {
   colorKey: "blue",
 };
 
+const TT_START = 7;
+const TT_END = 21;
+const HOUR_PX = 64;
+
+function timeToY(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return ((h - TT_START) * 60 + m) * (HOUR_PX / 60);
+}
+
 export default function PlanningPage() {
   const [slots, setSlots] = useState<PlanningSlot[]>([]);
   const [cours, setCours] = useState<CoursParticulier[]>([]);
@@ -161,131 +170,385 @@ export default function PlanningPage() {
       )}
 
       {!loading && !error && (
-        <div className="flex flex-col gap-4">
-          {DAYS_FULL.map((day, i) => {
-            const daySlots = slots.filter((s) => s.day === i);
-            const coursParJour = cours.filter((c) => c.jours.some((j) => j.day === i));
-            const isToday = i === todayDay;
-            return (
+        <>
+          {/* ── Mobile: vue carte par jour ── */}
+          <div className="md:hidden flex flex-col gap-4">
+            {DAYS_FULL.map((day, i) => {
+              const daySlots = slots.filter((s) => s.day === i);
+              const coursParJour = cours.filter((c) => c.jours.some((j) => j.day === i));
+              const isToday = i === todayDay;
+              return (
+                <div
+                  key={day}
+                  className="rounded-3xl p-4"
+                  style={{
+                    background: "#ffffff",
+                    border: isToday
+                      ? "1px solid rgba(236,72,153,0.5)"
+                      : "1px solid rgba(139,92,246,0.2)",
+                    boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <h2 className="font-bold" style={{ color: "#3b0764" }}>{day}</h2>
+                    {isToday && (
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+                        style={{ background: "linear-gradient(90deg, #ec4899, #7c3aed)" }}
+                      >
+                        Aujourd&apos;hui
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {daySlots.map((slot) => {
+                      const colorHex = SLOT_COLORS.find((c) => c.classes === slot.colorClass)?.hex ?? "#7c3aed";
+                      return (
+                        <div
+                          key={slot.id}
+                          className="flex items-center justify-between"
+                          style={{
+                            background: "#ffffff",
+                            borderLeft: `4px solid ${colorHex}`,
+                            borderRadius: "16px",
+                            boxShadow: "0 2px 8px rgba(124,58,237,0.1)",
+                            padding: "12px 14px",
+                          }}
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="font-bold text-sm" style={{ color: "#3b0764" }}>{slot.titre}</span>
+                            <span className="text-xs" style={{ color: "#6d28d9" }}>
+                              {slot.startTime} – {slot.endTime}
+                            </span>
+                            <span
+                              className="text-xs font-semibold px-2 py-0.5 rounded-full w-fit"
+                              style={{ background: `${colorHex}22`, color: "#3b0764" }}
+                            >
+                              {slot.categorie}
+                            </span>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => openEdit(slot)}
+                              className="p-2.5 rounded-xl active:scale-90 transition-transform"
+                              style={{ color: "#7c3aed" }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(slot.id)}
+                              className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {coursParJour.map((cp) => {
+                      const jourInfo = cp.jours.find((j) => j.day === i);
+                      return (
+                        <div
+                          key={cp.id}
+                          style={{
+                            background: "#f5f3ff",
+                            borderLeft: "4px solid #8b5cf6",
+                            borderRadius: "16px",
+                            padding: "12px 14px",
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span
+                              className="text-xs font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: "#ede9fe", color: "#6d28d9" }}
+                            >
+                              {cp.nom}
+                            </span>
+                            {jourInfo && (
+                              <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
+                                {jourInfo.startTime} – {jourInfo.endTime}
+                              </span>
+                            )}
+                          </div>
+                          {cp.matieres.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-1">
+                              {cp.matieres.map((m) => (
+                                <span
+                                  key={m}
+                                  className="text-xs px-1.5 py-0.5 rounded-full"
+                                  style={{ background: "#ddd6fe", color: "#5b21b6" }}
+                                >
+                                  {m}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs" style={{ color: "#8b5cf6" }}>🎓 Cours particulier</p>
+                        </div>
+                      );
+                    })}
+                    {daySlots.length === 0 && coursParJour.length === 0 && (
+                      <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
+                        Aucun cours
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Desktop: tableau emploi du temps ── */}
+          <div
+            className="hidden md:flex"
+            style={{
+              background: "#ffffff",
+              borderRadius: 20,
+              border: "1px solid rgba(139,92,246,0.2)",
+              boxShadow: "0 4px 24px rgba(124,58,237,0.1)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Colonne horaires */}
+            <div style={{ width: 56, flexShrink: 0, background: "#f9f7ff" }}>
+              {/* En-tête vide */}
               <div
-                key={day}
-                className="rounded-3xl p-4"
                 style={{
-                  background: "#ffffff",
-                  border: isToday
-                    ? "1px solid rgba(236,72,153,0.5)"
-                    : "1px solid rgba(139,92,246,0.2)",
-                  boxShadow: "0 2px 12px rgba(124,58,237,0.08)",
+                  height: 50,
+                  borderBottom: "1px solid rgba(139,92,246,0.15)",
+                  borderRight: "1px solid rgba(139,92,246,0.15)",
+                }}
+              />
+              {/* Heures */}
+              <div
+                style={{
+                  position: "relative",
+                  height: `${(TT_END - TT_START) * HOUR_PX}px`,
+                  borderRight: "1px solid rgba(139,92,246,0.15)",
                 }}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold" style={{ color: "#3b0764" }}>{day}</h2>
-                  {isToday && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
-                      style={{ background: "linear-gradient(90deg, #ec4899, #7c3aed)" }}
-                    >
-                      Aujourd&apos;hui
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {daySlots.map((slot) => {
-                    const colorHex = SLOT_COLORS.find((c) => c.classes === slot.colorClass)?.hex ?? "#7c3aed";
-                    return (
+                {Array.from({ length: TT_END - TT_START + 1 }, (_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      top: `${i * HOUR_PX - 7}px`,
+                      left: 0,
+                      right: 4,
+                      textAlign: "right",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "#a78bfa",
+                      userSelect: "none",
+                      lineHeight: "14px",
+                    }}
+                  >
+                    {String(TT_START + i).padStart(2, "0")}h
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Colonnes par jour */}
+            {DAYS_FULL.map((day, dayIdx) => {
+              const isToday = dayIdx === todayDay;
+              const daySlots = slots.filter((s) => s.day === dayIdx);
+              const dayCoursParticuliers = cours.filter((cp) =>
+                cp.jours.some((j) => j.day === dayIdx)
+              );
+
+              return (
+                <div
+                  key={day}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderLeft: "1px solid rgba(139,92,246,0.1)",
+                  }}
+                >
+                  {/* En-tête du jour */}
+                  <div
+                    style={{
+                      height: 50,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 5,
+                      fontWeight: 800,
+                      fontSize: 11,
+                      color: isToday ? "#7c3aed" : "#3b0764",
+                      background: isToday
+                        ? "rgba(124,58,237,0.08)"
+                        : "#f9f7ff",
+                      borderBottom: "1px solid rgba(139,92,246,0.15)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    {day.substring(0, 3)}
+                    {isToday && (
                       <div
-                        key={slot.id}
-                        className="flex items-center justify-between"
                         style={{
-                          background: "#ffffff",
-                          borderLeft: `4px solid ${colorHex}`,
-                          borderRadius: "16px",
-                          boxShadow: "0 2px 8px rgba(124,58,237,0.1)",
-                          padding: "12px 14px",
+                          width: 5,
+                          height: 5,
+                          borderRadius: "50%",
+                          background: "#ec4899",
+                          flexShrink: 0,
                         }}
-                      >
-                        <div className="flex flex-col gap-1">
-                          <span className="font-bold text-sm" style={{ color: "#3b0764" }}>{slot.titre}</span>
-                          <span className="text-xs" style={{ color: "#6d28d9" }}>
-                            {slot.startTime} – {slot.endTime}
-                          </span>
-                          <span
-                            className="text-xs font-semibold px-2 py-0.5 rounded-full w-fit"
-                            style={{ background: `${colorHex}22`, color: "#3b0764" }}
-                          >
-                            {slot.categorie}
-                          </span>
-                        </div>
-                        <div className="flex gap-1 flex-shrink-0">
-                          <button
-                            onClick={() => openEdit(slot)}
-                            className="p-2.5 rounded-xl active:scale-90 transition-transform"
-                            style={{ color: "#7c3aed" }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(slot.id)}
-                            className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {coursParJour.map((cp) => {
-                    const jourInfo = cp.jours.find((j) => j.day === i);
-                    return (
+                      />
+                    )}
+                  </div>
+
+                  {/* Zone événements */}
+                  <div
+                    style={{
+                      position: "relative",
+                      height: `${(TT_END - TT_START) * HOUR_PX}px`,
+                      background: isToday ? "rgba(124,58,237,0.012)" : "transparent",
+                    }}
+                  >
+                    {/* Lignes horaires */}
+                    {Array.from({ length: TT_END - TT_START }, (_, i) => (
                       <div
-                        key={cp.id}
+                        key={i}
                         style={{
-                          background: "#f5f3ff",
-                          borderLeft: "4px solid #8b5cf6",
-                          borderRadius: "16px",
-                          padding: "12px 14px",
+                          position: "absolute",
+                          top: `${i * HOUR_PX}px`,
+                          left: 0,
+                          right: 0,
+                          borderTop: `1px solid rgba(139,92,246,${i % 2 === 0 ? "0.1" : "0.04"})`,
+                          pointerEvents: "none",
                         }}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: "#ede9fe", color: "#6d28d9" }}
+                      />
+                    ))}
+
+                    {/* Créneaux réguliers */}
+                    {daySlots.map((slot) => {
+                      const colorHex =
+                        SLOT_COLORS.find((c) => c.classes === slot.colorClass)?.hex ?? "#7c3aed";
+                      const top = timeToY(slot.startTime);
+                      const height = Math.max(timeToY(slot.endTime) - top, 22);
+                      return (
+                        <div
+                          key={slot.id}
+                          onClick={() => openEdit(slot)}
+                          title={`${slot.titre} · ${slot.startTime}–${slot.endTime}`}
+                          style={{
+                            position: "absolute",
+                            top: top + 1,
+                            left: 2,
+                            right: 2,
+                            height: height - 2,
+                            background: `${colorHex}1a`,
+                            borderLeft: `3px solid ${colorHex}`,
+                            borderRadius: 6,
+                            padding: "3px 5px",
+                            overflow: "hidden",
+                            cursor: "pointer",
+                            zIndex: 2,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: colorHex,
+                              lineHeight: "13px",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
                           >
-                            {cp.nom}
-                          </span>
-                          {jourInfo && (
-                            <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
-                              {jourInfo.startTime} – {jourInfo.endTime}
-                            </span>
+                            {slot.titre}
+                          </div>
+                          {height > 32 && (
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: "#6d28d9",
+                                marginTop: 1,
+                                lineHeight: "12px",
+                              }}
+                            >
+                              {slot.startTime} – {slot.endTime}
+                            </div>
+                          )}
+                          {height > 46 && (
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: "#9ca3af",
+                                marginTop: 1,
+                                lineHeight: "12px",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {slot.categorie}
+                            </div>
                           )}
                         </div>
-                        {cp.matieres.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-1">
-                            {cp.matieres.map((m) => (
-                              <span
-                                key={m}
-                                className="text-xs px-1.5 py-0.5 rounded-full"
-                                style={{ background: "#ddd6fe", color: "#5b21b6" }}
-                              >
-                                {m}
-                              </span>
-                            ))}
+                      );
+                    })}
+
+                    {/* Cours particuliers */}
+                    {dayCoursParticuliers.map((cp) => {
+                      const jourInfo = cp.jours.find((j) => j.day === dayIdx)!;
+                      const top = timeToY(jourInfo.startTime);
+                      const height = Math.max(timeToY(jourInfo.endTime) - top, 22);
+                      return (
+                        <div
+                          key={cp.id}
+                          title={`${cp.nom} · ${jourInfo.startTime}–${jourInfo.endTime} · Cours particulier`}
+                          style={{
+                            position: "absolute",
+                            top: top + 1,
+                            left: 2,
+                            right: 2,
+                            height: height - 2,
+                            background: "#ede9fe",
+                            borderLeft: "3px solid #8b5cf6",
+                            borderRadius: 6,
+                            padding: "3px 5px",
+                            overflow: "hidden",
+                            zIndex: 2,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: "#7c3aed",
+                              lineHeight: "13px",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {cp.nom}
                           </div>
-                        )}
-                        <p className="text-xs" style={{ color: "#8b5cf6" }}>🎓 Cours particulier</p>
-                      </div>
-                    );
-                  })}
-                  {daySlots.length === 0 && coursParJour.length === 0 && (
-                    <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
-                      Aucun cours
-                    </p>
-                  )}
+                          {height > 32 && (
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: "#8b5cf6",
+                                marginTop: 1,
+                                lineHeight: "12px",
+                              }}
+                            >
+                              🎓 {jourInfo.startTime} – {jourInfo.endTime}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
