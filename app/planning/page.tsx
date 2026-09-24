@@ -41,6 +41,25 @@ function timeToY(time: string): number {
   return ((h - TT_START) * 60 + m) * (HOUR_PX / 60);
 }
 
+const COURS_PALETTE = [
+  { bg: "#fce7f3", border: "#ec4899", text: "#be185d" },
+  { bg: "#dbeafe", border: "#3b82f6", text: "#1d4ed8" },
+  { bg: "#d1fae5", border: "#10b981", text: "#065f46" },
+  { bg: "#fef3c7", border: "#f59e0b", text: "#92400e" },
+  { bg: "#fee2e2", border: "#ef4444", text: "#991b1b" },
+  { bg: "#ccfbf1", border: "#14b8a6", text: "#115e59" },
+  { bg: "#e0e7ff", border: "#6366f1", text: "#3730a3" },
+  { bg: "#fdf4ff", border: "#c026d3", text: "#86198f" },
+];
+
+function getCoursColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) & 0x7fffffff;
+  }
+  return COURS_PALETTE[hash % COURS_PALETTE.length];
+}
+
 export default function PlanningPage() {
   const [slots, setSlots] = useState<PlanningSlot[]>([]);
   const [cours, setCours] = useState<CoursParticulier[]>([]);
@@ -247,12 +266,13 @@ export default function PlanningPage() {
                     })}
                     {coursParJour.map((cp) => {
                       const jourInfo = cp.jours.find((j) => j.day === i);
+                      const clr = getCoursColor(cp.nom);
                       return (
                         <div
                           key={cp.id}
                           style={{
-                            background: "#f5f3ff",
-                            borderLeft: "4px solid #8b5cf6",
+                            background: clr.bg,
+                            borderLeft: `4px solid ${clr.border}`,
                             borderRadius: "16px",
                             padding: "12px 14px",
                           }}
@@ -260,12 +280,12 @@ export default function PlanningPage() {
                           <div className="flex items-center justify-between mb-1">
                             <span
                               className="text-xs font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: "#ede9fe", color: "#6d28d9" }}
+                              style={{ background: clr.border + "22", color: clr.text }}
                             >
                               {cp.nom}
                             </span>
                             {jourInfo && (
-                              <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
+                              <span className="text-xs font-semibold" style={{ color: clr.text }}>
                                 {jourInfo.startTime} – {jourInfo.endTime}
                               </span>
                             )}
@@ -276,14 +296,14 @@ export default function PlanningPage() {
                                 <span
                                   key={m}
                                   className="text-xs px-1.5 py-0.5 rounded-full"
-                                  style={{ background: "#ddd6fe", color: "#5b21b6" }}
+                                  style={{ background: clr.border + "22", color: clr.text }}
                                 >
                                   {m}
                                 </span>
                               ))}
                             </div>
                           )}
-                          <p className="text-xs" style={{ color: "#8b5cf6" }}>🎓 Cours particulier</p>
+                          <p className="text-xs" style={{ color: clr.border }}>🎓 Cours particulier</p>
                         </div>
                       );
                     })}
@@ -416,7 +436,7 @@ export default function PlanningPage() {
                           top: `${i * HOUR_PX}px`,
                           left: 0,
                           right: 0,
-                          borderTop: `1px solid rgba(139,92,246,${i % 2 === 0 ? "0.1" : "0.04"})`,
+                          borderTop: `1px solid rgba(139,92,246,0.18)`,
                           pointerEvents: "none",
                         }}
                       />
@@ -439,8 +459,8 @@ export default function PlanningPage() {
                             left: 2,
                             right: 2,
                             height: height - 2,
-                            background: `${colorHex}1a`,
-                            borderLeft: `3px solid ${colorHex}`,
+                            background: `${colorHex}28`,
+                            borderLeft: `4px solid ${colorHex}`,
                             borderRadius: 6,
                             padding: "3px 5px",
                             overflow: "hidden",
@@ -497,6 +517,7 @@ export default function PlanningPage() {
                       const jourInfo = cp.jours.find((j) => j.day === dayIdx)!;
                       const top = timeToY(jourInfo.startTime);
                       const height = Math.max(timeToY(jourInfo.endTime) - top, 22);
+                      const clr = getCoursColor(cp.nom);
                       return (
                         <div
                           key={cp.id}
@@ -507,8 +528,8 @@ export default function PlanningPage() {
                             left: 2,
                             right: 2,
                             height: height - 2,
-                            background: "#ede9fe",
-                            borderLeft: "3px solid #8b5cf6",
+                            background: clr.bg,
+                            borderLeft: `4px solid ${clr.border}`,
                             borderRadius: 6,
                             padding: "3px 5px",
                             overflow: "hidden",
@@ -518,8 +539,8 @@ export default function PlanningPage() {
                           <div
                             style={{
                               fontSize: 10,
-                              fontWeight: 700,
-                              color: "#7c3aed",
+                              fontWeight: 800,
+                              color: clr.text,
                               lineHeight: "13px",
                               whiteSpace: "nowrap",
                               overflow: "hidden",
@@ -532,7 +553,7 @@ export default function PlanningPage() {
                             <div
                               style={{
                                 fontSize: 9,
-                                color: "#8b5cf6",
+                                color: clr.border,
                                 marginTop: 1,
                                 lineHeight: "12px",
                               }}
