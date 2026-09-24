@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import SideNav from "@/components/SideNav";
 import StarField from "@/components/StarField";
 import RegisterSW from "@/components/RegisterSW";
 import InstallPWA from "@/components/InstallPWA";
@@ -32,17 +33,16 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="ALMA" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className="font-[family-name:var(--font-inter)] md:flex md:min-h-screen md:items-center md:justify-center">
+      <body className="font-[family-name:var(--font-inter)]">
         <Providers>
           <RegisterSW />
           <StarField />
-          {/* Phone-frame wrapper: full-screen on mobile, contained column on desktop */}
-          <div
-            className="relative flex flex-col min-h-screen w-full md:min-h-0 md:h-[90vh] md:max-w-lg md:rounded-3xl md:overflow-hidden md:bg-white/10"
-            style={{ boxShadow: "0 24px 80px rgba(59,7,100,0.4)" } as React.CSSProperties}
-          >
-            <main className="relative z-10 flex-1 pb-28 md:pb-0 md:overflow-y-auto">{children}</main>
-            <BottomNav />
+          <div className="flex min-h-screen">
+            <SideNav />
+            <div className="flex-1 flex flex-col min-h-screen">
+              <main className="relative z-10 flex-1 pb-28 md:pb-0 md:overflow-y-auto">{children}</main>
+              <BottomNav />
+            </div>
           </div>
           <InstallPWA />
         </Providers>
