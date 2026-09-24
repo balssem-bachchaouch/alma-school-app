@@ -32,12 +32,18 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="ALMA" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className="min-h-screen font-[family-name:var(--font-inter)]">
+      <body className="font-[family-name:var(--font-inter)] md:flex md:min-h-screen md:items-center md:justify-center">
         <Providers>
           <RegisterSW />
           <StarField />
-          <main className="relative z-10 pb-28">{children}</main>
-          <BottomNav />
+          {/* Phone-frame wrapper: full-screen on mobile, contained column on desktop */}
+          <div
+            className="relative flex flex-col min-h-screen w-full md:min-h-0 md:h-[90vh] md:max-w-lg md:rounded-3xl md:overflow-hidden md:bg-white/10"
+            style={{ boxShadow: "0 24px 80px rgba(59,7,100,0.4)" } as React.CSSProperties}
+          >
+            <main className="relative z-10 flex-1 pb-28 md:pb-0 md:overflow-y-auto">{children}</main>
+            <BottomNav />
+          </div>
           <InstallPWA />
         </Providers>
       </body>
