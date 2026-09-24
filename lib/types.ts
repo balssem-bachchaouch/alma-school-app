@@ -66,6 +66,12 @@ export interface Matiere {
   couleur: string;
 }
 
+export interface JourCours {
+  day: number;        // 0=Lun...6=Dim
+  startTime: string;  // "09:00"
+  endTime: string;    // "11:00"
+}
+
 export interface CoursParticulier {
   id: string;
   nom: string;
@@ -73,8 +79,8 @@ export interface CoursParticulier {
   montant: number;
   devise: string;
   seancesParCycle: number;
-  jours: number[];       // 0=Lun...6=Dim
-  dateDebut: string;     // start date
+  jours: JourCours[];
+  dateDebut: string;
   cycles: CoursCycle[];
 }
 

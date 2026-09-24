@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { CoursParticulier, CoursCycle, CoursSeance } from "@/lib/types";
+import type { CoursParticulier, CoursCycle, CoursSeance, JourCours } from "@/lib/types";
 import {
   generateSeances, updateCycleSeances, isCycleComplete, formatDateFr, formatDateFrShort,
 } from "@/lib/coursUtils";
@@ -27,8 +27,8 @@ function dateToJour(d: string): string {
   return JOURS_FULL[(new Date(d + "T12:00:00").getDay() + 6) % 7];
 }
 
-function createFirstCycle(n: number, jours: number[], start: string): CoursCycle {
-  return { id: crypto.randomUUID(), numero: 1, seances: generateSeances(jours, n, start), paid: false };
+function createFirstCycle(n: number, jours: JourCours[], start: string): CoursCycle {
+  return { id: crypto.randomUUID(), numero: 1, seances: generateSeances(jours.map(j => j.day), n, start), paid: false };
 }
 
 
@@ -36,7 +36,7 @@ function createFirstCycle(n: number, jours: number[], start: string): CoursCycle
 
 type FormState = {
   nom: string; matieres: string[]; montant: string; devise: string;
-  seancesParCycle: string; jours: number[]; dateDebut: string;
+  seancesParCycle: string; jours: JourCours[]; dateDebut: string;
 };
 const DEFAULT_FORM: FormState = {
   nom: "", matieres: ["Mathématiques"], montant: "", devise: "DT",
@@ -53,21 +53,49 @@ type EditPaymentDialog = { coursId: string; cycleId: string; date: string; monta
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-function JoursToggle({ jours, onToggle }: { jours: number[]; onToggle: (i: number) => void }) {
+function JoursToggle({
+  jours, onToggle, onTimeChange,
+}: {
+  jours: JourCours[];
+  onToggle: (i: number) => void;
+  onTimeChange: (day: number, field: "startTime" | "endTime", value: string) => void;
+}) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <Label style={{ color: "#3b0764" }}>Jours du cours</Label>
       <div className="flex gap-1.5 flex-wrap">
-        {JOURS_SHORT.map((label, idx) => (
-          <button key={idx} type="button" onClick={() => onToggle(idx)}
-            className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-90"
-            style={jours.includes(idx)
-              ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff" }
-              : { background: "rgba(124,58,237,0.08)", color: "#6d28d9", border: "1px solid rgba(124,58,237,0.2)" }}>
-            {label}
-          </button>
-        ))}
+        {JOURS_SHORT.map((label, idx) => {
+          const active = jours.some(j => j.day === idx);
+          return (
+            <button key={idx} type="button" onClick={() => onToggle(idx)}
+              className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-90"
+              style={active
+                ? { background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff" }
+                : { background: "rgba(124,58,237,0.08)", color: "#6d28d9", border: "1px solid rgba(124,58,237,0.2)" }}>
+              {label}
+            </button>
+          );
+        })}
       </div>
+      {jours.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {[...jours].sort((a, b) => a.day - b.day).map(j => (
+            <div key={j.day} className="flex items-center gap-2 px-3 py-2 rounded-xl"
+              style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.15)" }}>
+              <span className="text-xs font-bold w-8 shrink-0" style={{ color: "#7c3aed" }}>{JOURS_SHORT[j.day]}</span>
+              <input type="time" value={j.startTime}
+                onChange={e => onTimeChange(j.day, "startTime", e.target.value)}
+                className="text-xs rounded-lg px-2 py-1 flex-1 min-w-0"
+                style={{ border: "1px solid rgba(124,58,237,0.2)", color: "#3b0764", background: "#fff" }} />
+              <span className="text-xs" style={{ color: "#9ca3af" }}>→</span>
+              <input type="time" value={j.endTime}
+                onChange={e => onTimeChange(j.day, "endTime", e.target.value)}
+                className="text-xs rounded-lg px-2 py-1 flex-1 min-w-0"
+                style={{ border: "1px solid rgba(124,58,237,0.2)", color: "#3b0764", background: "#fff" }} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -99,7 +127,10 @@ function normalizeCours(raw: any[]): CoursParticulier[] {
   return raw.map((c: any) => ({
     ...c,
     matieres: Array.isArray(c.matieres) ? c.matieres : typeof c.matiere === "string" ? [c.matiere] : ["Autre"],
-    jours: Array.isArray(c.jours) ? c.jours : [],
+    jours: Array.isArray(c.jours)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? c.jours.map((j: any) => typeof j === "number" ? { day: j, startTime: "09:00", endTime: "11:00" } : j)
+      : [],
     dateDebut: typeof c.dateDebut === "string" ? c.dateDebut : todayStr(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cycles: (Array.isArray(c.cycles) ? c.cycles : []).map((cy: any, cyIdx: number) => ({
@@ -227,8 +258,13 @@ export default function CoursPage() {
   };
 
   const toggleJour = (idx: number) => setForm(f => ({
-    ...f, jours: f.jours.includes(idx) ? f.jours.filter(j => j !== idx) : [...f.jours, idx],
+    ...f,
+    jours: f.jours.some(j => j.day === idx)
+      ? f.jours.filter(j => j.day !== idx)
+      : [...f.jours, { day: idx, startTime: "09:00", endTime: "11:00" }],
   }));
+  const setJourTime = (day: number, field: "startTime" | "endTime", value: string) =>
+    setForm(f => ({ ...f, jours: f.jours.map(j => j.day === day ? { ...j, [field]: value } : j) }));
   const toggleMatiere = (m: string) => setForm(f => ({
     ...f, matieres: f.matieres.includes(m) ? f.matieres.filter(x => x !== m) : [...f.matieres, m],
   }));
@@ -243,7 +279,7 @@ export default function CoursPage() {
       id: crypto.randomUUID(), nom: form.nom,
       matieres: form.matieres.length > 0 ? form.matieres : ["Autre"],
       montant: parseFloat(form.montant), devise: form.devise, seancesParCycle: n,
-      jours: [...form.jours].sort((a, b) => a - b), dateDebut: start,
+      jours: [...form.jours].sort((a, b) => a.day - b.day), dateDebut: start,
       cycles: [createFirstCycle(n, form.jours, start)],
     };
     setCours(prev => [...prev, newCours]);
@@ -267,7 +303,7 @@ export default function CoursPage() {
     if (!editingId || !form.nom || !form.montant || form.jours.length === 0) return;
     const next = cours.map(c => {
       if (c.id !== editingId) return c;
-      const newJours = [...form.jours].sort((a, b) => a - b);
+      const newJours = [...form.jours].sort((a, b) => a.day - b.day);
       const newSpc = Math.max(1, parseInt(form.seancesParCycle) || 12);
       const cy = c.cycles[c.cycles.length - 1];
       const done = cy.seances.filter(s => s.done);
@@ -277,7 +313,7 @@ export default function CoursPage() {
       if (needed > 0) {
         const nd = new Date(lastDate + "T12:00:00");
         if (done.length > 0) nd.setDate(nd.getDate() + 1);
-        updatedCy = { ...cy, seances: [...done, ...generateSeances(newJours, needed, nd.toISOString().split("T")[0], done.length + 1)] };
+        updatedCy = { ...cy, seances: [...done, ...generateSeances(newJours.map(j => j.day), needed, nd.toISOString().split("T")[0], done.length + 1)] };
       } else {
         updatedCy = { ...cy, seances: done };
       }
@@ -341,7 +377,7 @@ export default function CoursPage() {
     nd.setDate(nd.getDate() + 1);
     const newCycle: CoursCycle = {
       id: crypto.randomUUID(), numero: lastCycle.numero + 1,
-      seances: generateSeances(c.jours, c.seancesParCycle, nd.toISOString().split("T")[0]),
+      seances: generateSeances(c.jours.map(j => j.day), c.seancesParCycle, nd.toISOString().split("T")[0]),
       paid: false,
     };
     const next = cours.map(co => {
@@ -584,7 +620,7 @@ export default function CoursPage() {
                       ))}
                     </div>
                     <p className="text-xs font-medium mb-2" style={{ color: "#7c3aed" }}>
-                      📅 {c.jours.map(j => JOURS_FULL[j]).join(" · ")}
+                      📅 {[...c.jours].sort((a,b)=>a.day-b.day).map(j => `${JOURS_FULL[j.day]} ${j.startTime}–${j.endTime}`).join(" · ")}
                     </p>
                     <div className="text-xs font-semibold mb-1.5" style={{ color: "#6d28d9" }}>
                       Cycle {currentCycle.numero} — {doneCount}/{total} effectuées
@@ -804,7 +840,7 @@ export default function CoursPage() {
               <Input className="rounded-2xl" type="number" placeholder="12" value={form.seancesParCycle}
                 onChange={e => setForm(f => ({ ...f, seancesParCycle: e.target.value }))} />
             </div>
-            <JoursToggle jours={form.jours} onToggle={toggleJour} />
+            <JoursToggle jours={form.jours} onToggle={toggleJour} onTimeChange={setJourTime} />
             <div className="flex flex-col gap-1.5">
               <Label style={{ color: "#3b0764" }}>Date de début</Label>
               <Input className="rounded-2xl" type="date" value={form.dateDebut}
@@ -849,7 +885,7 @@ export default function CoursPage() {
               <Input className="rounded-2xl" type="number" value={form.seancesParCycle}
                 onChange={e => setForm(f => ({ ...f, seancesParCycle: e.target.value }))} />
             </div>
-            <JoursToggle jours={form.jours} onToggle={toggleJour} />
+            <JoursToggle jours={form.jours} onToggle={toggleJour} onTimeChange={setJourTime} />
             <div className="flex flex-col gap-1.5">
               <Label style={{ color: "#3b0764" }}>Date de début</Label>
               <Input className="rounded-2xl" type="date" value={form.dateDebut}

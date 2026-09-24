@@ -58,7 +58,7 @@ export function updateCycleSeances(
   lastDate.setDate(lastDate.getDate() + 1);
 
   const newSeances = generateSeances(
-    cours.jours,
+    cours.jours.map(j => j.day),
     actualToAdd,
     lastDate.toISOString().split("T")[0],
     cycle.seances.length + 1

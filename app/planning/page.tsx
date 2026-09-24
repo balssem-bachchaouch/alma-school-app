@@ -164,7 +164,7 @@ export default function PlanningPage() {
         <div className="flex flex-col gap-4">
           {DAYS_FULL.map((day, i) => {
             const daySlots = slots.filter((s) => s.day === i);
-            const coursParJour = cours.filter((c) => c.jours.includes(i));
+            const coursParJour = cours.filter((c) => c.jours.some((j) => j.day === i));
             const isToday = i === todayDay;
             return (
               <div
@@ -234,40 +234,48 @@ export default function PlanningPage() {
                       </div>
                     );
                   })}
-                  {coursParJour.map((cp) => (
-                    <div
-                      key={cp.id}
-                      style={{
-                        background: "#f5f3ff",
-                        borderLeft: "4px solid #8b5cf6",
-                        borderRadius: "16px",
-                        padding: "12px 14px",
-                      }}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: "#ede9fe", color: "#6d28d9" }}
-                        >
-                          {cp.nom}
-                        </span>
-                      </div>
-                      {cp.matieres.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-1">
-                          {cp.matieres.map((m) => (
-                            <span
-                              key={m}
-                              className="text-xs px-1.5 py-0.5 rounded-full"
-                              style={{ background: "#ddd6fe", color: "#5b21b6" }}
-                            >
-                              {m}
+                  {coursParJour.map((cp) => {
+                    const jourInfo = cp.jours.find((j) => j.day === i);
+                    return (
+                      <div
+                        key={cp.id}
+                        style={{
+                          background: "#f5f3ff",
+                          borderLeft: "4px solid #8b5cf6",
+                          borderRadius: "16px",
+                          padding: "12px 14px",
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: "#ede9fe", color: "#6d28d9" }}
+                          >
+                            {cp.nom}
+                          </span>
+                          {jourInfo && (
+                            <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
+                              {jourInfo.startTime} – {jourInfo.endTime}
                             </span>
-                          ))}
+                          )}
                         </div>
-                      )}
-                      <p className="text-xs" style={{ color: "#8b5cf6" }}>🎓 Cours particulier</p>
-                    </div>
-                  ))}
+                        {cp.matieres.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            {cp.matieres.map((m) => (
+                              <span
+                                key={m}
+                                className="text-xs px-1.5 py-0.5 rounded-full"
+                                style={{ background: "#ddd6fe", color: "#5b21b6" }}
+                              >
+                                {m}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs" style={{ color: "#8b5cf6" }}>🎓 Cours particulier</p>
+                      </div>
+                    );
+                  })}
                   {daySlots.length === 0 && coursParJour.length === 0 && (
                     <p className="text-sm text-center py-2" style={{ color: "rgba(109,40,217,0.4)" }}>
                       Aucun cours
