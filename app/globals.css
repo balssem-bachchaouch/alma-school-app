@@ -95,12 +95,12 @@
   --sidebar-ring: #7c3aed;
 }
 
-/* Desktop: expand page wrappers from mobile max-w-md to a wider column */
+/* Desktop: expand page wrappers from mobile max-w-md to fill content area */
 @media (min-width: 768px) {
   main > div.max-w-md {
-    max-width: 56rem;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
   }
 }
 
