@@ -658,6 +658,20 @@ export default function PlanningPage() {
             </div>
           </div>
           <DialogFooter className="gap-2">
+            {editing && (
+              <button
+                onClick={async () => {
+                  if (!window.confirm("Supprimer ce créneau ?")) return;
+                  setOpen(false);
+                  const res = await fetch(`/api/planning/${editing.id}`, { method: "DELETE" });
+                  if (res.ok) setSlots((prev) => prev.filter((s) => s.id !== editing.id));
+                }}
+                className="px-4 py-2 rounded-2xl font-semibold text-sm mr-auto"
+                style={{ color: "#ef4444" }}
+              >
+                Supprimer
+              </button>
+            )}
             <button
               onClick={() => setOpen(false)}
               className="px-4 py-2 rounded-2xl font-semibold text-sm"
