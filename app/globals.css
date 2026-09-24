@@ -95,6 +95,15 @@
   --sidebar-ring: #7c3aed;
 }
 
+/* Desktop: expand page wrappers from mobile max-w-md to a wider column */
+@media (min-width: 768px) {
+  main > div.max-w-md {
+    max-width: 56rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 @keyframes twinkle {
   0%, 100% { opacity: 0.2; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.4); }
