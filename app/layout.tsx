@@ -40,7 +40,7 @@ export default function RootLayout({
           <div className="flex min-h-screen">
             <SideNav />
             <div className="flex-1 flex flex-col min-h-screen">
-              <main className="relative z-10 flex-1 pb-28 md:pb-0 md:overflow-y-auto md:bg-white">{children}</main>
+              <main className="relative z-10 flex-1 pb-28 md:pb-0 md:overflow-y-auto">{children}</main>
               <BottomNav />
             </div>
           </div>
