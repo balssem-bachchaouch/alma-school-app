@@ -35,6 +35,11 @@ function getTodayFr() {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
 function streakLabel(streak: number): string {
   if (streak === 0) return "Commence ta série !";
   if (streak === 1) return "1 jour de suite ! 🔥";
@@ -209,7 +214,11 @@ export default function HomePage() {
       </div>
 
       {/* ── HERO CARD ── */}
-      <div
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.4 }}
         className="rounded-3xl mb-3 text-center overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)",
@@ -253,7 +262,7 @@ export default function HomePage() {
             <span className="relative">{streakLabel(stats.streak)}</span>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── LEVEL BAR ── */}
       <div className="mb-4 px-1">
@@ -275,7 +284,11 @@ export default function HomePage() {
           🎯 Défis du jour
         </h2>
         <div className="grid grid-cols-2 gap-2">
-          <div
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ duration: 0.4, delay: 0 }}
             className="rounded-2xl p-3"
             style={{
               background: "#ffffff",
@@ -295,8 +308,12 @@ export default function HomePage() {
               </>
             )}
             <p className="text-xs font-bold mt-1.5" style={{ color: "#f59e0b" }}>+10 🪙</p>
-          </div>
-          <div
+          </motion.div>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ duration: 0.4, delay: 0.05 }}
             className="rounded-2xl p-3"
             style={{
               background: "#ffffff",
@@ -307,12 +324,18 @@ export default function HomePage() {
             <p className="text-xs font-bold mb-0.5" style={{ color: "#3b0764" }}>✅ Mission 1</p>
             <p className="text-xs" style={{ color: "#6d28d9" }}>Terminée !</p>
             <p className="text-xs font-bold mt-1.5" style={{ color: "#7c3aed" }}>+5 pts ⭐</p>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* ── AUJOURD'HUI ── */}
-      <div className="mb-5">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="mb-5"
+      >
         <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           📖 Aujourd&apos;hui
         </h2>
@@ -359,10 +382,16 @@ export default function HomePage() {
             })}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* ── DEMAIN ── */}
-      <div className="mb-5">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="mb-5"
+      >
         <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
           🌙 Demain
         </h2>
@@ -398,7 +427,7 @@ export default function HomePage() {
             })}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* ── BADGES ── */}
       <div>
@@ -412,8 +441,10 @@ export default function HomePage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           {badgeSlots.map((badge, i) => (
-            <span
+            <motion.span
               key={i}
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
               className="text-xs px-3 py-1.5 rounded-full font-semibold"
               style={
                 !badge
@@ -422,7 +453,7 @@ export default function HomePage() {
               }
             >
               {badge ? `${badge.emoji} ${badge.name}` : "🔒"}
-            </span>
+            </motion.span>
           ))}
         </div>
       </div>
