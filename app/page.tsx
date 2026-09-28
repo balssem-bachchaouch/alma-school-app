@@ -7,6 +7,38 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Circle, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { Devoir, GameStats, Badge } from "@/lib/types";
+import HelpButton from "@/components/HelpButton";
+
+const ACCUEIL_GUIDE = [
+  {
+    emoji: "🏠",
+    title: "Tableau de bord",
+    items: [
+      "L'accueil affiche tes devoirs du jour et de demain en priorité.",
+      "Le compteur 🪙 montre tes pièces gagnées en complétant des devoirs.",
+      "La série 🔥 indique ton nombre de jours consécutifs d'activité.",
+    ],
+  },
+  {
+    emoji: "📚",
+    title: "Navigation",
+    items: [
+      "Utiliser la barre du bas (mobile) ou le menu de gauche (desktop) pour naviguer.",
+      "Devoirs : gérer tes devoirs scolaires.",
+      "Planning : voir ton emploi du temps hebdomadaire.",
+      "Tâches : gérer tes tâches personnelles, scolaires et d'étude.",
+      "Cours : suivre tes cours particuliers et paiements.",
+    ],
+  },
+  {
+    emoji: "👤",
+    title: "Compte",
+    items: [
+      "Cliquer sur l'avatar 👧 en haut à droite pour accéder au menu.",
+      "L'icône 📚 ouvre la gestion de tes matières personnalisées.",
+    ],
+  },
+];
 import {
   getGameStats,
   saveGameStats,
@@ -170,6 +202,7 @@ export default function HomePage() {
           <Link href="/matieres" className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform" style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }} title="Matières">
             📚
           </Link>
+          <HelpButton pageTitle="Accueil" sections={ACCUEIL_GUIDE} />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setIsMenuOpen((v) => !v)}

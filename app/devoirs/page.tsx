@@ -25,6 +25,36 @@ import { getMatiereConfig, DUREES } from "@/lib/constants";
 import { getMatieres } from "@/lib/storage";
 import { updateStreak } from "@/lib/streak";
 import { checkAndUnlockBadges } from "@/lib/badges";
+import HelpButton from "@/components/HelpButton";
+
+const DEVOIRS_GUIDE = [
+  {
+    emoji: "📝",
+    title: "Ajouter un devoir",
+    items: [
+      "Cliquer sur \"+ Ajouter\" en haut à droite.",
+      "Choisir la matière, le titre, la date limite et la durée estimée.",
+      "Le devoir apparaît dans la liste groupé par date (Aujourd'hui, Demain…).",
+    ],
+  },
+  {
+    emoji: "✅",
+    title: "Marquer comme fait",
+    items: [
+      "Cliquer sur le cercle ○ à gauche du devoir pour le cocher.",
+      "Tu gagnes des pièces 🪙 à chaque devoir complété.",
+      "Un devoir fait passe en bas de la liste avec un style barré.",
+    ],
+  },
+  {
+    emoji: "✏️",
+    title: "Modifier / Supprimer",
+    items: [
+      "Cliquer sur l'icône crayon pour modifier un devoir.",
+      "Cliquer sur la corbeille 🗑️ pour supprimer (confirmation demandée).",
+    ],
+  },
+];
 
 function getDateLabel(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
@@ -174,7 +204,10 @@ export default function DevoirsPage() {
   return (
     <div className="px-4 pt-8 pb-24 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📚 Mes Devoirs</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📚 Mes Devoirs</h1>
+          <HelpButton pageTitle="Devoirs" sections={DEVOIRS_GUIDE} />
+        </div>
         <button
           onClick={openAdd}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"

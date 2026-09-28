@@ -20,6 +20,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PlanningSlot, CoursParticulier } from "@/lib/types";
 import { SLOT_COLORS, CATEGORIES_PLANNING, DAYS_FULL } from "@/lib/constants";
+import HelpButton from "@/components/HelpButton";
+
+const PLANNING_GUIDE = [
+  {
+    emoji: "📅",
+    title: "Vue desktop — Tableau hebdomadaire",
+    items: [
+      "Le tableau affiche toute la semaine (Lun → Dim) avec les horaires de 7h à 21h.",
+      "Chaque créneau est positionné automatiquement selon ses heures de début et de fin.",
+      "Cliquer sur un créneau ouvre le dialog de modification.",
+      "Les cours particuliers (violet) sont en lecture seule — à gérer dans la section Cours.",
+    ],
+  },
+  {
+    emoji: "📱",
+    title: "Vue mobile — Cartes par jour",
+    items: [
+      "Chaque jour affiche ses créneaux sous forme de carte.",
+      "Les boutons ✏️ et 🗑️ permettent de modifier ou supprimer un créneau.",
+      "Le jour actuel est mis en évidence avec un badge rose.",
+    ],
+  },
+  {
+    emoji: "➕",
+    title: "Ajouter un créneau",
+    items: [
+      "Cliquer sur \"+ Ajouter\" en haut à droite.",
+      "Renseigner le titre, la catégorie, le jour, l'heure de début et de fin.",
+      "Choisir une couleur pour distinguer les types de créneaux.",
+    ],
+  },
+];
+
 
 const getTodayDay = () => (new Date().getDay() + 6) % 7;
 
@@ -158,7 +191,10 @@ export default function PlanningPage() {
   return (
     <div className="px-4 pt-8 pb-24 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📅 Mon Planning</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📅 Mon Planning</h1>
+          <HelpButton pageTitle="Planning" sections={PLANNING_GUIDE} />
+        </div>
         <button
           onClick={openAdd}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"

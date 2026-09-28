@@ -16,6 +16,46 @@ import {
   generateSeances, updateCycleSeances, isCycleComplete, formatDateFr, formatDateFrShort,
 } from "@/lib/coursUtils";
 import { getMatieres } from "@/lib/storage";
+import HelpButton from "@/components/HelpButton";
+
+const COURS_GUIDE = [
+  {
+    emoji: "🎓",
+    title: "Ajouter un cours particulier",
+    items: [
+      "Cliquer sur \"+ Ajouter\" en haut à droite.",
+      "Renseigner le nom de l'élève, les matières, le montant et la devise.",
+      "Choisir les jours et les horaires de chaque séance.",
+      "Définir le nombre de séances par cycle (par défaut 12).",
+    ],
+  },
+  {
+    emoji: "📆",
+    title: "Gérer les séances",
+    items: [
+      "Déplier un cours pour voir ses cycles et séances.",
+      "Cocher une séance pour la marquer comme effectuée.",
+      "Cliquer sur ➕ pour ajouter une séance manuelle ou modifier une date.",
+    ],
+  },
+  {
+    emoji: "💰",
+    title: "Suivi des paiements",
+    items: [
+      "Chaque cycle a un statut de paiement (payé / non payé).",
+      "Cliquer sur \"Marquer payé\" pour enregistrer un paiement et démarrer le cycle suivant.",
+      "Le montant, la devise et la date de paiement sont enregistrés.",
+    ],
+  },
+  {
+    emoji: "📊",
+    title: "Planning",
+    items: [
+      "Les cours particuliers apparaissent automatiquement dans la page Planning.",
+      "Chaque élève a sa propre couleur distinctive dans le tableau.",
+    ],
+  },
+];
 const DEVISES = ["DT", "€", "$"];
 const JOURS_SHORT = ["LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM"];
 const JOURS_FULL = ["LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI", "DIMANCHE"];
@@ -549,7 +589,10 @@ export default function CoursPage() {
   return (
     <div className="px-4 pt-8 pb-28 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>🎓 Cours Particuliers</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>🎓 Cours Particuliers</h1>
+          <HelpButton pageTitle="Cours" sections={COURS_GUIDE} />
+        </div>
         <button onClick={() => { setForm({ ...DEFAULT_FORM, dateDebut: todayStr() }); setAddOpen(true); }}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
           style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>

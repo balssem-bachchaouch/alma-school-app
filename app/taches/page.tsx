@@ -19,6 +19,45 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Tache, SousTache } from "@/lib/types";
+import HelpButton from "@/components/HelpButton";
+
+const TACHES_GUIDE = [
+  {
+    emoji: "✅",
+    title: "Créer une tâche",
+    items: [
+      "Cliquer sur \"+ Nouvelle\" en haut à droite.",
+      "Renseigner le titre, le statut, la priorité et le type (Perso / École / Étude).",
+      "Ajouter une date d'échéance, une description et des sous-tâches si besoin.",
+    ],
+  },
+  {
+    emoji: "🔄",
+    title: "Changer le statut",
+    items: [
+      "Cliquer sur le cercle à gauche d'une tâche pour passer : À faire → En cours → Terminé.",
+      "Une tâche terminée apparaît barrée et légèrement grisée.",
+      "Filtrer par statut avec les boutons en haut de page.",
+    ],
+  },
+  {
+    emoji: "📋",
+    title: "Sous-tâches",
+    items: [
+      "Cliquer sur \"Sous-tâches X/Y\" pour dérouler la liste.",
+      "Cocher chaque sous-tâche individuellement.",
+      "Les sous-tâches sont gérées depuis le dialog de modification.",
+    ],
+  },
+  {
+    emoji: "🎨",
+    title: "Filtrer et organiser",
+    items: [
+      "Filtrer par statut (ligne du haut) ou par type (Perso / École / Étude).",
+      "La priorité est indiquée par un badge coloré : vert = Basse, orange = Moyenne, rouge = Haute.",
+    ],
+  },
+];
 
 const STATUTS = ["À faire", "En cours", "Terminé"] as const;
 const PRIORITES = ["Basse", "Moyenne", "Haute"] as const;
@@ -178,7 +217,10 @@ export default function TachesPage() {
     <div className="px-4 pt-8 pb-24 max-w-md mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>✅ Mes Tâches</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>✅ Mes Tâches</h1>
+          <HelpButton pageTitle="Tâches" sections={TACHES_GUIDE} />
+        </div>
         <button
           onClick={openAdd}
           className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
