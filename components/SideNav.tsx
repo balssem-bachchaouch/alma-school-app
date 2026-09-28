@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Calendar, ShoppingBag, GraduationCap, ListTodo } from "lucide-react";
+import { Home, BookOpen, Calendar, GraduationCap, ListTodo } from "lucide-react";
 
 const tabs = [
   { href: "/", icon: Home, label: "Accueil" },
   { href: "/devoirs", icon: BookOpen, label: "Devoirs" },
   { href: "/planning", icon: Calendar, label: "Planning" },
   { href: "/taches", icon: ListTodo, label: "Tâches" },
-  { href: "/cartable", icon: ShoppingBag, label: "Cartable" },
   { href: "/cours", icon: GraduationCap, label: "Cours" },
 ];
 
