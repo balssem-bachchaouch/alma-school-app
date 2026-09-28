@@ -93,6 +93,24 @@ export interface TachePerso {
   createdAt: string;
 }
 
+export interface SousTache {
+  id: string;
+  titre: string;
+  done: boolean;
+}
+
+export interface Tache {
+  id: string;
+  titre: string;
+  description?: string;
+  statut: string;   // 'À faire' | 'En cours' | 'Terminé'
+  priorite: string; // 'Basse' | 'Moyenne' | 'Haute'
+  type: string;     // 'Perso' | 'École' | 'Étude'
+  dueDate?: string;
+  sousTaches: SousTache[];
+  createdAt: string;
+}
+
 export interface Note {
   id: string;
   titre: string;

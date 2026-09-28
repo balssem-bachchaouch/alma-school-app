@@ -151,3 +151,16 @@ export const coursParticuliers = pgTable('cours_particuliers', {
   cycles: text('cycles').notNull().default('[]'),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+export const tachesPerso = pgTable('taches_perso', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  titre: text('titre').notNull(),
+  description: text('description'),
+  statut: text('statut').notNull().default('À faire'),
+  priorite: text('priorite').notNull().default('Moyenne'),
+  type: text('type').notNull().default('Perso'),
+  dueDate: text('due_date'),
+  sousTaches: text('sous_taches').notNull().default('[]'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
