@@ -125,6 +125,7 @@ export default function HomePage() {
 
   const devoirsAujourdhui = devoirs.filter((d) => d.dueDate === today);
   const devoirsDemain = devoirs.filter((d) => d.dueDate === tomorrow);
+  const devoirsEnRetard = devoirs.filter((d) => !d.completed && d.dueDate < today);
   const nextPending = devoirsAujourdhui.find((d) => !d.completed);
 
   const mascotteState = getMascotteState(stats, devoirs, celebrating);
@@ -360,6 +361,53 @@ export default function HomePage() {
           </motion.div>
         </div>
       </div>
+
+      {/* ── EN RETARD ── */}
+      {devoirsEnRetard.length > 0 && (
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.4, delay: 0.08 }}
+          className="mb-5"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#dc2626" }}>
+            ⚠️ En retard
+          </h2>
+          <div className="flex flex-col gap-2">
+            {devoirsEnRetard.map((d) => {
+              const cfg = getMatiereConfig(d.matiere);
+              return (
+                <div
+                  key={d.id}
+                  className="rounded-[20px] p-4 flex items-center gap-3"
+                  style={{
+                    background: "#fff5f5",
+                    border: "1px solid rgba(220,38,38,0.25)",
+                    boxShadow: "0 2px 12px rgba(220,38,38,0.08)",
+                  }}
+                >
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
+                      {d.matiere}
+                    </span>
+                    <p className="font-semibold mt-1.5 text-sm" style={{ color: "#3b0764" }}>{d.titre}</p>
+                    <p className="text-xs mt-0.5 font-semibold" style={{ color: "#dc2626" }}>
+                      Prévu le {new Date(d.dueDate + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                    </p>
+                  </div>
+                  <button onClick={() => toggle(d.id)} className="flex-shrink-0 active:scale-90 transition-transform">
+                    {d.completed
+                      ? <CheckCircle2 size={28} className="text-green-500" />
+                      : <Circle size={28} style={{ color: "rgba(220,38,38,0.4)" }} />}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── AUJOURD'HUI ── */}
       <motion.div

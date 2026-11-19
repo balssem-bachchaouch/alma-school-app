@@ -599,9 +599,39 @@ export default function CoursPage() {
           <Plus size={16} /> Ajouter
         </button>
       </div>
-      <p className="text-sm mb-6" style={{ color: "#6d28d9" }}>
+      <p className="text-sm mb-4" style={{ color: "#6d28d9" }}>
         {cours.length === 0 ? "Aucun cours particulier" : `${cours.length} cours suivi${cours.length > 1 ? "s" : ""}`}
       </p>
+
+      {cours.length > 0 && (() => {
+        const devises = [...new Set(cours.map(c => c.devise))];
+        return devises.map(devise => {
+          const coursDevise = cours.filter(c => c.devise === devise);
+          const totalRecu = coursDevise.reduce((sum, c) =>
+            sum + c.cycles.filter(cy => cy.paid).reduce((s, cy) => s + (cy.montantPaye ?? c.montant), 0), 0);
+          const enAttente = coursDevise.reduce((sum, c) => {
+            const last = c.cycles[c.cycles.length - 1];
+            if (!last.paid && last.seances.some(s => s.done)) return sum + c.montant;
+            return sum;
+          }, 0);
+          return (
+            <div key={devise} className="grid grid-cols-3 gap-2 mb-5">
+              <div className="rounded-2xl p-3 text-center" style={{ background: "#d1fae5", border: "1px solid #6ee7b7" }}>
+                <p className="text-xs font-bold mb-0.5" style={{ color: "#065f46" }}>Total reçu</p>
+                <p className="text-sm font-extrabold" style={{ color: "#065f46" }}>{totalRecu} {devise}</p>
+              </div>
+              <div className="rounded-2xl p-3 text-center" style={{ background: enAttente > 0 ? "#fef3c7" : "#f3f4f6", border: `1px solid ${enAttente > 0 ? "#fcd34d" : "#e5e7eb"}` }}>
+                <p className="text-xs font-bold mb-0.5" style={{ color: enAttente > 0 ? "#92400e" : "#6b7280" }}>En attente</p>
+                <p className="text-sm font-extrabold" style={{ color: enAttente > 0 ? "#d97706" : "#6b7280" }}>{enAttente} {devise}</p>
+              </div>
+              <div className="rounded-2xl p-3 text-center" style={{ background: "#ede9fe", border: "1px solid #c4b5fd" }}>
+                <p className="text-xs font-bold mb-0.5" style={{ color: "#5b21b6" }}>Élèves</p>
+                <p className="text-sm font-extrabold" style={{ color: "#7c3aed" }}>{cours.length}</p>
+              </div>
+            </div>
+          );
+        });
+      })()}
 
       {cours.length === 0 && (
         <div className="rounded-3xl p-8 text-center" style={{ background: "#fff", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 2px 12px rgba(124,58,237,0.08)" }}>

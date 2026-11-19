@@ -366,11 +366,17 @@ export default function TachesPage() {
                       >
                         {t.statut}
                       </span>
-                      {t.dueDate && (
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#f3f4f6", color: "#6b7280" }}>
-                          📅 {new Date(t.dueDate).toLocaleDateString("fr-FR")}
-                        </span>
-                      )}
+                      {t.dueDate && (() => {
+                        const overdue = !done && t.dueDate < new Date().toISOString().split("T")[0];
+                        return (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={overdue
+                            ? { background: "#fee2e2", color: "#dc2626" }
+                            : { background: "#f3f4f6", color: "#6b7280" }
+                          }>
+                            {overdue ? "⚠️ En retard" : "📅"} {new Date(t.dueDate + "T12:00:00").toLocaleDateString("fr-FR")}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {t.description && (
