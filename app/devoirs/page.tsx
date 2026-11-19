@@ -74,10 +74,16 @@ function getDateLabel(dateStr: string): string {
 const DATE_ORDER = ["Aujourd'hui", "Demain", "Après-demain"];
 const EMPTY_FORM = { matiere: "", titre: "", dueDate: "", duree: "30 min" };
 
+const MATIERE_HEX: Record<string, string> = {
+  "Mathématiques": "#f97316", "Français": "#3b82f6", "Arabe": "#10b981",
+  "Sciences": "#8b5cf6", "Anglais": "#eab308", "Histoire-Géo": "#ec4899",
+  "Éducation Physique": "#ef4444", "Arts Plastiques": "#d946ef",
+};
+
 const CARD = {
   background: "#ffffff",
-  border: "1px solid rgba(139,92,246,0.2)",
-  boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
+  border: "1px solid rgba(139,92,246,0.15)",
+  boxShadow: "0 2px 20px rgba(124,58,237,0.08)",
 };
 
 export default function DevoirsPage() {
@@ -207,9 +213,16 @@ export default function DevoirsPage() {
     return ai - bi;
   });
 
+  const today = new Date().toISOString().split("T")[0];
+  const doneCount = devoirs.filter(d => d.completed).length;
+  const todoCount = devoirs.filter(d => !d.completed).length;
+  const retardCount = devoirs.filter(d => !d.completed && d.dueDate < today).length;
+  const pct = devoirs.length > 0 ? Math.round((doneCount / devoirs.length) * 100) : 0;
+
   return (
-    <div className="px-4 pt-8 pb-24 max-w-md mx-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="px-4 pt-6 pb-32 max-w-md mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📚 Mes Devoirs</h1>
           <HelpButton pageTitle="Devoirs" sections={DEVOIRS_GUIDE} />
@@ -223,6 +236,25 @@ export default function DevoirsPage() {
           Ajouter
         </button>
       </div>
+
+      {/* Stats strip */}
+      {!loading && devoirs.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid rgba(124,58,237,0.15)" }}>
+            <span className="text-2xl font-extrabold" style={{ color: "#7c3aed" }}>{todoCount}</span>
+            <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>À faire</span>
+          </div>
+          <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: retardCount > 0 ? "#fff5f5" : "#f0fdf4", border: `1px solid ${retardCount > 0 ? "rgba(220,38,38,0.15)" : "rgba(16,185,129,0.15)"}` }}>
+            <span className="text-2xl font-extrabold" style={{ color: retardCount > 0 ? "#dc2626" : "#10b981" }}>{retardCount > 0 ? retardCount : doneCount}</span>
+            <span className="text-xs font-semibold" style={{ color: retardCount > 0 ? "#dc2626" : "#10b981" }}>{retardCount > 0 ? "En retard" : "Terminés"}</span>
+          </div>
+          <div className="rounded-2xl p-3 flex flex-col gap-0.5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
+            <span className="text-2xl font-extrabold text-white">{pct}%</span>
+            <span className="text-xs font-semibold text-white/80">Fait</span>
+            <div className="absolute bottom-0 left-0 h-1 rounded-full" style={{ width: `${pct}%`, background: "rgba(255,255,255,0.4)" }} />
+          </div>
+        </div>
+      )}
 
       {/* Barre de recherche */}
       <div className="relative mb-5">
@@ -283,9 +315,18 @@ export default function DevoirsPage() {
 
       {!loading && !error && sortedGroups.map(([label, items]) => (
         <div key={label} className="mb-6">
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#3b0764" }}>
-            {label}
-          </h2>
+          {/* Modern section header */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, rgba(124,58,237,0.2), transparent)" }} />
+            <span className="text-xs font-extrabold px-3 py-1 rounded-full tracking-widest"
+              style={{ background: "rgba(124,58,237,0.08)", color: "#7c3aed" }}>
+              {label}
+            </span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#ede9fe", color: "#7c3aed" }}>
+              {items.filter(d => !d.completed).length}
+            </span>
+            <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.2))" }} />
+          </div>
           {items.length === 0 ? (
             <p className="text-sm text-center py-4" style={{ color: "#6d28d9" }}>
               🎉 Aucun devoir — tu es libre !
@@ -294,43 +335,49 @@ export default function DevoirsPage() {
             <div className="flex flex-col gap-3">
               {items.map((d) => {
                 const cfg = getMatiereConfig(d.matiere);
+                const accentColor = MATIERE_HEX[d.matiere] ?? "#7c3aed";
                 return (
                   <div
                     key={d.id}
-                    className={`relative rounded-[20px] p-4 flex items-center gap-3 transition-opacity ${d.completed ? "opacity-50" : ""}`}
-                    style={CARD}
+                    className={`relative rounded-[20px] flex items-center gap-3 overflow-hidden transition-all ${d.completed ? "opacity-55" : ""}`}
+                    style={{
+                      ...CARD,
+                      paddingLeft: 0,
+                    }}
                   >
-                    <div className={`w-3 h-3 rounded-full ${cfg.dot} flex-shrink-0`} />
-                    <div className="flex-1 min-w-0">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full opacity-90 ${cfg.badge}`}>
+                    {/* Left color accent bar */}
+                    <div className="w-1 self-stretch flex-shrink-0 rounded-l-[20px]" style={{ background: d.completed ? "#d1d5db" : accentColor, minHeight: 68 }} />
+                    <div className="flex-1 min-w-0 py-3 pr-1">
+                      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${cfg.badge}`}>
                         {d.matiere}
                       </span>
-                      <p className={`font-semibold mt-1.5 text-sm ${d.completed ? "line-through" : ""}`} style={{ color: "#3b0764" }}>
+                      <p className={`font-bold mt-1.5 text-sm leading-snug ${d.completed ? "line-through text-gray-400" : ""}`} style={{ color: d.completed ? "#9ca3af" : "#3b0764" }}>
                         {d.titre}
                       </p>
                       <div className="flex items-center gap-1 mt-1">
-                        <Clock size={12} style={{ color: "#6d28d9" }} />
-                        <span className="text-xs" style={{ color: "#6d28d9" }}>{d.duree}</span>
+                        <Clock size={11} style={{ color: "#a78bfa" }} />
+                        <span className="text-xs" style={{ color: "#a78bfa" }}>{d.duree}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0 relative">
+                    <div className="flex items-center gap-0.5 flex-shrink-0 pr-3 relative">
                       <button
                         onClick={() => openEdit(d)}
-                        className="p-2.5 rounded-xl active:scale-90 transition-transform"
-                        style={{ color: "#7c3aed" }}
+                        className="p-2 rounded-xl active:scale-90 transition-transform"
+                        style={{ color: "#a78bfa" }}
                       >
-                        <Pencil size={15} />
+                        <Pencil size={14} />
                       </button>
                       <button
                         onClick={() => handleDelete(d.id)}
-                        className="p-2.5 rounded-xl active:scale-90 transition-transform text-red-500"
+                        className="p-2 rounded-xl active:scale-90 transition-transform"
+                        style={{ color: "#fca5a5" }}
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={14} />
                       </button>
-                      <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative">
+                      <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative ml-1">
                         {d.completed
-                          ? <CheckCircle2 size={28} className="text-green-500" />
-                          : <Circle size={28} style={{ color: "rgba(124,58,237,0.3)" }} />}
+                          ? <CheckCircle2 size={26} style={{ color: "#10b981" }} />
+                          : <Circle size={26} style={{ color: "rgba(124,58,237,0.25)" }} />}
                         <AnimatePresence>
                           {coinToast === d.id && (
                             <motion.span

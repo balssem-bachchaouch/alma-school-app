@@ -245,6 +245,33 @@ export default function TachesPage() {
         </button>
       </div>
 
+      {/* Stat tiles */}
+      {!loading && (
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <div className="rounded-2xl p-3 flex flex-col gap-0.5"
+            style={{ background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid rgba(124,58,237,0.15)" }}>
+            <span className="text-2xl font-extrabold" style={{ color: "#7c3aed" }}>
+              {taches.filter(t => t.statut === "À faire").length}
+            </span>
+            <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>À faire</span>
+          </div>
+          <div className="rounded-2xl p-3 flex flex-col gap-0.5"
+            style={{ background: "linear-gradient(135deg, #fffbeb, #fef3c7)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <span className="text-2xl font-extrabold" style={{ color: "#d97706" }}>
+              {taches.filter(t => t.statut === "En cours").length}
+            </span>
+            <span className="text-xs font-semibold" style={{ color: "#d97706" }}>En cours</span>
+          </div>
+          <div className="rounded-2xl p-3 flex flex-col gap-0.5 relative overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
+            <span className="text-2xl font-extrabold text-white">
+              {taches.filter(t => t.statut === "Terminé").length}
+            </span>
+            <span className="text-xs font-semibold text-white/80">Terminé</span>
+          </div>
+        </div>
+      )}
+
       {/* Filtres statut */}
       <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
         {(["Tout", ...STATUTS] as string[]).map(s => (

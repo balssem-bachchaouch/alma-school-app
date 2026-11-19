@@ -337,52 +337,62 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── DÉFIS DU JOUR ── */}
+      {/* ── BENTO STATS ── */}
       <div className="mb-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#3b0764" }}>
-          🎯 Défis du jour
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#3b0764" }}>
+          📊 Tableau de bord
         </h2>
         <div className="grid grid-cols-2 gap-2">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            transition={{ duration: 0.4, delay: 0 }}
-            className="rounded-2xl p-3"
-            style={{
-              background: "#ffffff",
-              border: "1px solid rgba(139,92,246,0.2)",
-              boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
-            }}
-          >
-            {nextPending ? (
-              <>
-                <p className="text-xs font-bold mb-0.5 truncate" style={{ color: "#3b0764" }}>{nextPending.matiere}</p>
-                <p className="text-xs truncate" style={{ color: "#6d28d9" }}>{nextPending.titre}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-xs font-bold mb-0.5" style={{ color: "#3b0764" }}>Tout fait !</p>
-                <p className="text-xs" style={{ color: "#6d28d9" }}>Bravo 🎉</p>
-              </>
-            )}
-            <p className="text-xs font-bold mt-1.5" style={{ color: "#f59e0b" }}>+10 🪙</p>
+          {/* Tile 1 — Devoirs aujourd'hui */}
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ duration: 0.35, delay: 0 }}
+            className="rounded-2xl p-3.5 flex flex-col gap-1"
+            style={{ background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid rgba(124,58,237,0.15)", boxShadow: "0 2px 12px rgba(124,58,237,0.08)" }}>
+            <span className="text-3xl font-extrabold leading-none" style={{ color: "#7c3aed" }}>
+              {devoirsLoading ? "…" : devoirsAujourdhui.length}
+            </span>
+            <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>Devoirs aujourd'hui</span>
+            <div className="mt-0.5 h-1 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.15)" }}>
+              <div className="h-full rounded-full" style={{
+                width: devoirsAujourdhui.length > 0
+                  ? `${Math.round(devoirsAujourdhui.filter(d => d.completed).length / devoirsAujourdhui.length * 100)}%`
+                  : "100%",
+                background: "linear-gradient(90deg,#7c3aed,#ec4899)"
+              }} />
+            </div>
           </motion.div>
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="rounded-2xl p-3"
-            style={{
-              background: "#ffffff",
-              border: "1px solid rgba(139,92,246,0.2)",
-              boxShadow: "0 2px 12px rgba(124,58,237,0.1)",
-            }}
-          >
-            <p className="text-xs font-bold mb-0.5" style={{ color: "#3b0764" }}>✅ Mission 1</p>
-            <p className="text-xs" style={{ color: "#6d28d9" }}>Terminée !</p>
-            <p className="text-xs font-bold mt-1.5" style={{ color: "#7c3aed" }}>+5 pts ⭐</p>
+          {/* Tile 2 — Pièces */}
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ duration: 0.35, delay: 0.05 }}
+            className="rounded-2xl p-3.5 flex flex-col gap-1 relative overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", boxShadow: "0 4px 20px rgba(124,58,237,0.3)" }}>
+            <span className="text-3xl font-extrabold leading-none text-white">🪙 {stats.coins}</span>
+            <span className="text-xs font-semibold text-white/80">Pièces gagnées</span>
+            <span className="text-xs text-white/60 mt-0.5">{stats.totalCompleted} devoir{stats.totalCompleted !== 1 ? "s" : ""} fait{stats.totalCompleted !== 1 ? "s" : ""}</span>
+          </motion.div>
+          {/* Tile 3 — En retard */}
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ duration: 0.35, delay: 0.08 }}
+            className="rounded-2xl p-3.5 flex flex-col gap-1"
+            style={devoirsEnRetard.length > 0
+              ? { background: "#fff5f5", border: "1px solid rgba(220,38,38,0.2)", boxShadow: "0 2px 12px rgba(220,38,38,0.08)" }
+              : { background: "#f0fdf4", border: "1px solid rgba(16,185,129,0.2)", boxShadow: "0 2px 12px rgba(16,185,129,0.08)" }}>
+            <span className="text-3xl font-extrabold leading-none"
+              style={{ color: devoirsEnRetard.length > 0 ? "#dc2626" : "#10b981" }}>
+              {devoirsLoading ? "…" : devoirsEnRetard.length > 0 ? devoirsEnRetard.length : "✓"}
+            </span>
+            <span className="text-xs font-semibold"
+              style={{ color: devoirsEnRetard.length > 0 ? "#dc2626" : "#10b981" }}>
+              {devoirsEnRetard.length > 0 ? "En retard" : "À jour !"}
+            </span>
+          </motion.div>
+          {/* Tile 4 — Série */}
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ duration: 0.35, delay: 0.1 }}
+            className="rounded-2xl p-3.5 flex flex-col gap-1"
+            style={{ background: stats.streak > 0 ? "#fffbeb" : "#f9f7ff", border: `1px solid ${stats.streak > 0 ? "rgba(245,158,11,0.25)" : "rgba(124,58,237,0.1)"}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+            <span className="text-3xl font-extrabold leading-none" style={{ color: stats.streak > 0 ? "#d97706" : "#a78bfa" }}>
+              {stats.streak > 0 ? `${stats.streak}🔥` : "0"}
+            </span>
+            <span className="text-xs font-semibold" style={{ color: stats.streak > 0 ? "#d97706" : "#a78bfa" }}>
+              {stats.streak > 0 ? "Jours de suite" : "Commence ta série"}
+            </span>
           </motion.div>
         </div>
       </div>

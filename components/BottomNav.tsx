@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Calendar, GraduationCap, ListTodo, Moon, Sun } from "lucide-react";
+import { Home, BookOpen, Calendar, GraduationCap, ListTodo } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTheme } from "./ThemeProvider";
 
 const tabs = [
   { href: "/", icon: Home, label: "Accueil" },
@@ -31,19 +30,31 @@ function useTachesEnRetard() {
 export default function BottomNav() {
   const pathname = usePathname();
   const tachesEnRetard = useTachesEnRetard();
-  const { theme, toggle } = useTheme();
 
   if (pathname === "/login" || pathname === "/register") return null;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden alma-nav"
+      className="fixed z-50 md:hidden"
       style={{
-        background: "var(--sidebar, #ffffff)",
-        borderTop: "1px solid var(--sidebar-border, rgba(124,58,237,0.2))",
+        bottom: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "calc(100% - 32px)",
+        maxWidth: 420,
       }}
     >
-      <div className="flex items-center justify-around px-2 py-1 max-w-md mx-auto">
+      <div
+        className="flex items-center justify-around px-3 py-2.5 rounded-[28px]"
+        style={{
+          background: "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          boxShadow:
+            "0 8px 32px rgba(124,58,237,0.2), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
+          border: "1px solid rgba(255,255,255,0.9)",
+        }}
+      >
         {tabs.map(({ href, icon: Icon, label }) => {
           const active = pathname === href;
           const badge = href === "/taches" && tachesEnRetard > 0 ? tachesEnRetard : 0;
@@ -51,39 +62,48 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all"
+              aria-label={label}
+              className="flex flex-col items-center gap-1 px-3 py-1"
             >
-              <div className="relative p-2 rounded-2xl transition-all" style={active ? { background: "#ede9fe" } : undefined}>
-                <Icon size={22} strokeWidth={active ? 2.5 : 1.8} style={{ color: active ? "#7c3aed" : "#9ca3af" }} />
+              <div
+                className="relative flex items-center justify-center w-10 h-10 rounded-2xl transition-all"
+                style={
+                  active
+                    ? {
+                        background:
+                          "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.1))",
+                      }
+                    : {}
+                }
+              >
+                <Icon
+                  size={20}
+                  strokeWidth={active ? 2.5 : 1.8}
+                  style={{ color: active ? "#7c3aed" : "#9ca3af" }}
+                />
                 {badge > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white flex items-center justify-center font-bold"
-                    style={{ background: "#dc2626", fontSize: 9 }}>
+                  <span
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white flex items-center justify-center font-bold"
+                    style={{ background: "#dc2626", fontSize: 9 }}
+                  >
                     {badge > 9 ? "9+" : badge}
                   </span>
                 )}
               </div>
-              <span className="text-xs font-semibold" style={{ color: active ? "#7c3aed" : "#9ca3af" }}>
-                {label}
-              </span>
+              <span
+                className="rounded-full"
+                style={{
+                  width: 4,
+                  height: 4,
+                  background: active
+                    ? "linear-gradient(135deg, #7c3aed, #ec4899)"
+                    : "transparent",
+                  transition: "background 0.2s",
+                }}
+              />
             </Link>
           );
         })}
-
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggle}
-          className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all"
-        >
-          <div className="p-2 rounded-2xl transition-all">
-            {theme === "dark"
-              ? <Sun size={22} strokeWidth={1.8} style={{ color: "#9ca3af" }} />
-              : <Moon size={22} strokeWidth={1.8} style={{ color: "#9ca3af" }} />
-            }
-          </div>
-          <span className="text-xs font-semibold" style={{ color: "#9ca3af" }}>
-            {theme === "dark" ? "Clair" : "Sombre"}
-          </span>
-        </button>
       </div>
     </nav>
   );
