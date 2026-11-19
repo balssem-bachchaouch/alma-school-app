@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Circle, LogOut, Moon, Sun } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "@/components/ThemeProvider";
+import { getActiveTitle, getActiveDeco, getActiveTheme, HERO_GRADIENTS } from "@/lib/boutique";
 import type { Devoir, GameStats, Badge } from "@/lib/types";
 import HelpButton from "@/components/HelpButton";
 
@@ -115,6 +116,10 @@ export default function HomePage() {
     setBadges(getBadges());
     setLoaded(true);
 
+    setActiveTitleLocal(getActiveTitle());
+    setActiveDecoLocal(getActiveDeco());
+    setActiveBoutiqueTheme(getActiveTheme());
+
     fetch("/api/devoirs")
       .then((r) => r.ok ? r.json() : [])
       .then((data: Devoir[]) => setDevoirs(data))
@@ -197,6 +202,9 @@ export default function HomePage() {
   };
 
   const { theme, toggle: toggleTheme } = useTheme();
+  const [activeTitle, setActiveTitleLocal] = useState<string | null>(null);
+  const [activeDeco, setActiveDecoLocal] = useState<string | null>(null);
+  const [activeBoutiqueTheme, setActiveBoutiqueTheme] = useState<string | null>(null);
   const unlockedBadges = badges.filter((b) => b.unlocked);
   const badgeSlots: (Badge | null)[] = [
     ...unlockedBadges.slice(0, 3),
@@ -210,16 +218,19 @@ export default function HomePage() {
 
       {/* ── TOP BAR ── */}
       <div className="flex items-center justify-between mb-3">
-        <motion.div
-          key={stats.coins}
-          initial={{ scale: 1.3 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 400, damping: 15 }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white"
-          style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
-        >
-          🪙 {stats.coins}
-        </motion.div>
+        <Link href="/recompenses">
+          <motion.div
+            key={stats.coins}
+            initial={{ scale: 1.3 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white active:scale-90 transition-transform"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 2px 10px rgba(245,158,11,0.4)" }}
+          >
+            🪙 {stats.coins}
+            <span className="text-white/70 font-normal">→</span>
+          </motion.div>
+        </Link>
         <span className="text-xs font-bold tracking-widest" style={{ color: "#7c3aed" }}>
           ALMA
         </span>
@@ -290,7 +301,7 @@ export default function HomePage() {
         transition={{ duration: 0.5, type: "spring", stiffness: 200 }}
         className="rounded-3xl mb-3 text-center overflow-hidden relative"
         style={{
-          background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)",
+          background: HERO_GRADIENTS[activeBoutiqueTheme ?? "default"] ?? HERO_GRADIENTS.default,
           padding: "16px",
         }}
       >
@@ -320,6 +331,29 @@ export default function HomePage() {
           <p className="text-xs text-white/60 mb-1 relative z-10">
             {session.user.name ?? session.user.email}
           </p>
+        )}
+        {activeTitle && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold text-white mb-1.5 relative z-10"
+            style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
+          >
+            {activeTitle}
+          </motion.div>
+        )}
+        {activeDeco === "hearts" && (
+          <>
+            {["💖","💝","💕"].map((h, i) => (
+              <motion.span key={i} className="absolute text-lg select-none pointer-events-none z-20"
+                style={{ right: `${5 + i * 10}%`, bottom: "15%" }}
+                animate={{ y: [0, -20, 0], opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2 + i * 0.5, repeat: Infinity, delay: i * 0.4 }}>
+                {h}
+              </motion.span>
+            ))}
+          </>
         )}
         <p className="text-lg font-extrabold text-white mb-3 relative z-10">{getTodayFr()}</p>
 
