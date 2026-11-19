@@ -7,6 +7,7 @@ import StarField from "@/components/StarField";
 import RegisterSW from "@/components/RegisterSW";
 import InstallPWA from "@/components/InstallPWA";
 import Providers from "@/components/Providers";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
       </head>
       <body className="font-[family-name:var(--font-inter)]">
         <Providers>
+          <ThemeProvider>
           <RegisterSW />
           <StarField />
           <div className="flex min-h-screen">
@@ -45,6 +47,7 @@ export default function RootLayout({
             </div>
           </div>
           <InstallPWA />
+          </ThemeProvider>
         </Providers>
       </body>
     </html>

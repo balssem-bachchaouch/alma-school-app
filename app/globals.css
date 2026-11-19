@@ -95,6 +95,48 @@
   --sidebar-ring: #7c3aed;
 }
 
+/* ── Dark mode ── */
+[data-theme="dark"] {
+  --background: #1a0a2e;
+  --foreground: #e9d5ff;
+  --card: #2a1550;
+  --card-foreground: #e9d5ff;
+  --popover: #2a1550;
+  --popover-foreground: #e9d5ff;
+  --muted: rgba(139,92,246,0.15);
+  --muted-foreground: #c4b5fd;
+  --accent: rgba(139,92,246,0.2);
+  --accent-foreground: #e9d5ff;
+  --border: rgba(139,92,246,0.3);
+  --input: #2a1550;
+  --sidebar: #1f1040;
+  --sidebar-foreground: #e9d5ff;
+  --sidebar-border: rgba(139,92,246,0.25);
+  --space-bg: #1a0a2e;
+  --space-card: #2a1550;
+  --space-text: #e9d5ff;
+  --space-muted: #c4b5fd;
+  --space-card-border: rgba(139,92,246,0.3);
+}
+
+[data-theme="dark"] body {
+  background: #1a0a2e !important;
+}
+
+[data-theme="dark"] .alma-nav {
+  background: #1f1040 !important;
+  border-color: rgba(139,92,246,0.25) !important;
+}
+
+[data-theme="dark"] [data-slot="dialog-footer"] {
+  background: #2a1550 !important;
+}
+
+[data-theme="dark"] [data-slot="dialog-content"] {
+  background: #2a1550 !important;
+  color: #e9d5ff !important;
+}
+
 /* Desktop: expand page wrappers from mobile max-w-md to fill content area */
 @media (min-width: 768px) {
   main > div.max-w-md {

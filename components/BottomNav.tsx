@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Calendar, GraduationCap, ListTodo } from "lucide-react";
+import { Home, BookOpen, Calendar, GraduationCap, ListTodo, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTheme } from "./ThemeProvider";
 
 const tabs = [
   { href: "/", icon: Home, label: "Accueil" },
@@ -30,15 +31,16 @@ function useTachesEnRetard() {
 export default function BottomNav() {
   const pathname = usePathname();
   const tachesEnRetard = useTachesEnRetard();
+  const { theme, toggle } = useTheme();
 
   if (pathname === "/login" || pathname === "/register") return null;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden alma-nav"
       style={{
-        background: "#ffffff",
-        borderTop: "1px solid rgba(124,58,237,0.2)",
+        background: "var(--sidebar, #ffffff)",
+        borderTop: "1px solid var(--sidebar-border, rgba(124,58,237,0.2))",
       }}
     >
       <div className="flex items-center justify-around px-2 py-1 max-w-md mx-auto">
@@ -66,6 +68,22 @@ export default function BottomNav() {
             </Link>
           );
         })}
+
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggle}
+          className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all"
+        >
+          <div className="p-2 rounded-2xl transition-all">
+            {theme === "dark"
+              ? <Sun size={22} strokeWidth={1.8} style={{ color: "#9ca3af" }} />
+              : <Moon size={22} strokeWidth={1.8} style={{ color: "#9ca3af" }} />
+            }
+          </div>
+          <span className="text-xs font-semibold" style={{ color: "#9ca3af" }}>
+            {theme === "dark" ? "Clair" : "Sombre"}
+          </span>
+        </button>
       </div>
     </nav>
   );

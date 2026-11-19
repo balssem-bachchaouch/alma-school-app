@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Calendar, GraduationCap, ListTodo } from "lucide-react";
+import { Home, BookOpen, Calendar, GraduationCap, ListTodo, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTheme } from "./ThemeProvider";
 
 const tabs = [
   { href: "/", icon: Home, label: "Accueil" },
@@ -30,15 +31,16 @@ function useTachesEnRetard() {
 export default function SideNav() {
   const pathname = usePathname();
   const tachesEnRetard = useTachesEnRetard();
+  const { theme, toggle } = useTheme();
 
   if (pathname === "/login" || pathname === "/register") return null;
 
   return (
     <nav
-      className="hidden md:flex flex-col w-60 min-h-screen flex-shrink-0"
+      className="hidden md:flex flex-col w-60 min-h-screen flex-shrink-0 alma-nav"
       style={{
-        background: "#ffffff",
-        borderRight: "1px solid rgba(139,92,246,0.15)",
+        background: "var(--sidebar, #ffffff)",
+        borderRight: "1px solid var(--sidebar-border, rgba(139,92,246,0.15))",
         boxShadow: "2px 0 20px rgba(124,58,237,0.1)",
       }}
     >
@@ -91,6 +93,18 @@ export default function SideNav() {
             </Link>
           );
         })}
+      </div>
+
+      {/* Dark mode toggle at the bottom */}
+      <div className="px-3 py-4" style={{ borderTop: "1px solid var(--sidebar-border, rgba(139,92,246,0.1))" }}>
+        <button
+          onClick={toggle}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all"
+          style={{ color: "#6b7280" }}
+        >
+          {theme === "dark" ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
+          <span className="font-semibold text-sm">{theme === "dark" ? "Mode clair" : "Mode sombre"}</span>
+        </button>
       </div>
     </nav>
   );
