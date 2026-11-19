@@ -86,6 +86,17 @@ const CARD = {
   boxShadow: "0 2px 20px rgba(124,58,237,0.08)",
 };
 
+const listVariants = {
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+const cardVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.94 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 22 } },
+  exit: { opacity: 0, scale: 0.9, x: 20, transition: { duration: 0.18 } },
+};
+
+const STAR_PARTICLES = ["⭐", "🌟", "✨", "💫", "🎉", "🪙"];
+
 export default function DevoirsPage() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +107,7 @@ export default function DevoirsPage() {
   const [coinToast, setCoinToast] = useState<string | null>(null);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
   const [search, setSearch] = useState("");
+  const [starBurst, setStarBurst] = useState<string | null>(null);
 
   const loadDevoirs = async () => {
     try {
@@ -177,7 +189,9 @@ export default function DevoirsPage() {
       const newStats = { ...streakStats, coins: streakStats.coins + 10, totalCompleted: streakStats.totalCompleted + 1 };
       saveGameStats(newStats);
       setCoinToast(id);
+      setStarBurst(id);
       setTimeout(() => setCoinToast(null), 1100);
+      setTimeout(() => setStarBurst(null), 1200);
 
       const cartableCompletions = parseInt(localStorage.getItem("alma_cartable_completions") ?? "0", 10);
       const currentBadges = getBadges();
@@ -273,8 +287,17 @@ export default function DevoirsPage() {
       </div>
 
       {loading && (
-        <div className="flex justify-center py-12">
-          <div className="w-8 h-8 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
+        <div className="flex justify-center items-center gap-2 py-14">
+          {["📚", "✏️", "🎒"].map((e, i) => (
+            <motion.span
+              key={i}
+              className="text-2xl"
+              animate={{ y: [0, -14, 0] }}
+              transition={{ duration: 0.7, delay: i * 0.18, repeat: Infinity, ease: "easeInOut" }}
+            >
+              {e}
+            </motion.span>
+          ))}
         </div>
       )}
 
@@ -292,7 +315,10 @@ export default function DevoirsPage() {
       )}
 
       {!loading && !error && devoirs.length === 0 && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
           className="rounded-2xl py-12 px-6 text-center mt-8"
           style={{
             background: "#ffffff",
@@ -300,17 +326,23 @@ export default function DevoirsPage() {
             border: "1px solid rgba(139,92,246,0.15)",
           }}
         >
-          <p className="text-6xl mb-4">📚</p>
+          <motion.p
+            className="text-6xl mb-4"
+            animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+          >📚</motion.p>
           <p className="font-bold text-lg mb-1" style={{ color: "#3b0764" }}>Pas encore de devoirs !</p>
           <p className="text-sm mb-6" style={{ color: "#6d28d9" }}>Ajoute ton premier devoir ici 🎉</p>
-          <button
+          <motion.button
             onClick={openAdd}
-            className="px-5 py-2.5 rounded-2xl text-white font-bold text-sm active:scale-95 transition-transform"
+            whileTap={{ scale: 0.93 }}
+            whileHover={{ scale: 1.03 }}
+            className="px-5 py-2.5 rounded-2xl text-white font-bold text-sm"
             style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
           >
             + Ajouter un devoir
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
 
       {!loading && !error && sortedGroups.map(([label, items]) => (
@@ -332,14 +364,17 @@ export default function DevoirsPage() {
               🎉 Aucun devoir — tu es libre !
             </p>
           ) : (
-            <div className="flex flex-col gap-3">
+            <motion.div className="flex flex-col gap-3" variants={listVariants} initial="hidden" animate="visible">
               {items.map((d) => {
                 const cfg = getMatiereConfig(d.matiere);
                 const accentColor = MATIERE_HEX[d.matiere] ?? "#7c3aed";
                 return (
-                  <div
+                  <motion.div
                     key={d.id}
-                    className={`relative rounded-[20px] flex items-center gap-3 overflow-hidden transition-all ${d.completed ? "opacity-55" : ""}`}
+                    variants={cardVariants}
+                    layout
+                    whileHover={{ y: -2, boxShadow: "0 6px 24px rgba(124,58,237,0.14)" }}
+                    className={`relative rounded-[20px] flex items-center gap-3 overflow-hidden ${d.completed ? "opacity-55" : ""}`}
                     style={{
                       ...CARD,
                       paddingLeft: 0,
@@ -374,18 +409,32 @@ export default function DevoirsPage() {
                       >
                         <Trash2 size={14} />
                       </button>
-                      <button onClick={() => toggle(d.id)} className="active:scale-90 transition-transform relative ml-1">
-                        {d.completed
-                          ? <CheckCircle2 size={26} style={{ color: "#10b981" }} />
-                          : <Circle size={26} style={{ color: "rgba(124,58,237,0.25)" }} />}
+                      <motion.button
+                        onClick={() => toggle(d.id)}
+                        className="relative ml-1"
+                        whileTap={{ scale: 0.75 }}
+                        transition={{ type: "spring", stiffness: 500 }}
+                      >
+                        <AnimatePresence mode="wait">
+                          {d.completed ? (
+                            <motion.div key="done" initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 400 }}>
+                              <CheckCircle2 size={26} style={{ color: "#10b981" }} />
+                            </motion.div>
+                          ) : (
+                            <motion.div key="todo" initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
+                              <Circle size={26} style={{ color: "rgba(124,58,237,0.25)" }} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        {/* Coin toast */}
                         <AnimatePresence>
                           {coinToast === d.id && (
                             <motion.span
                               key="toast"
-                              initial={{ y: 0, opacity: 1 }}
-                              animate={{ y: -40, opacity: 0 }}
+                              initial={{ y: 0, opacity: 1, scale: 1 }}
+                              animate={{ y: -50, opacity: 0, scale: 1.3 }}
                               exit={{}}
-                              transition={{ duration: 1, ease: "easeOut" }}
+                              transition={{ duration: 1.1, ease: "easeOut" }}
                               className="absolute left-1/2 -translate-x-1/2 bottom-full text-sm font-bold pointer-events-none whitespace-nowrap"
                               style={{ color: "#f59e0b" }}
                             >
@@ -393,12 +442,33 @@ export default function DevoirsPage() {
                             </motion.span>
                           )}
                         </AnimatePresence>
-                      </button>
+                        {/* Star burst particles */}
+                        <AnimatePresence>
+                          {starBurst === d.id && STAR_PARTICLES.map((p, i) => {
+                            const angle = (i / STAR_PARTICLES.length) * 360;
+                            const rad = (angle * Math.PI) / 180;
+                            const tx = Math.round(Math.cos(rad) * 40);
+                            const ty = Math.round(Math.sin(rad) * 40);
+                            return (
+                              <motion.span
+                                key={`star-${i}`}
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-base pointer-events-none select-none"
+                                initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                                animate={{ x: tx, y: ty, scale: 1, opacity: 0 }}
+                                exit={{}}
+                                transition={{ duration: 0.7, ease: "easeOut" }}
+                              >
+                                {p}
+                              </motion.span>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </motion.button>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           )}
         </div>
       ))}

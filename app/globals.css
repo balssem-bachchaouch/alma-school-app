@@ -168,6 +168,73 @@
   50% { opacity: 0.5; transform: scale(1.4); }
 }
 
+/* ── Animations fun pour enfants ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(3deg); }
+  66% { transform: translateY(-5px) rotate(-3deg); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  25% { transform: rotate(8deg) scale(1.05); }
+  50% { transform: rotate(-5deg) scale(1); }
+  75% { transform: rotate(5deg) scale(1.03); }
+}
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes bounce-fun {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  40% { transform: translateY(-16px) scaleY(1.05); }
+  60% { transform: translateY(-8px) scaleY(0.98); }
+  80% { transform: translateY(-4px) scaleY(1); }
+}
+@keyframes sparkle-spin {
+  0% { transform: scale(0.8) rotate(0deg); opacity: 0.7; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0.8) rotate(360deg); opacity: 0.7; }
+}
+@keyframes shimmer-move {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(124,58,237,0); }
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(-80px) rotate(360deg) scale(0); opacity: 0; }
+}
+@keyframes star-burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+@keyframes rainbow-text {
+  0% { color: #7c3aed; }
+  20% { color: #ec4899; }
+  40% { color: #f59e0b; }
+  60% { color: #10b981; }
+  80% { color: #3b82f6; }
+  100% { color: #7c3aed; }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 4s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 0.6s ease-in-out; }
+.animate-pop { animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-bounce-fun { animation: bounce-fun 0.8s ease-in-out; }
+.animate-sparkle { animation: sparkle-spin 2s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-rainbow { animation: rainbow-text 3s linear infinite; }
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

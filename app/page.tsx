@@ -287,45 +287,71 @@ export default function HomePage() {
         variants={fadeUp}
         initial="hidden"
         animate="visible"
-        transition={{ duration: 0.4 }}
-        className="rounded-3xl mb-3 text-center overflow-hidden"
+        transition={{ duration: 0.5, type: "spring", stiffness: 200 }}
+        className="rounded-3xl mb-3 text-center overflow-hidden relative"
         style={{
           background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)",
           padding: "16px",
         }}
       >
-        <p className="text-xs font-bold uppercase tracking-widest mb-0.5 text-white/80">
+        {/* Floating emojis background */}
+        {[
+          { emoji: "⭐", x: "8%", delay: 0, duration: 3.2 },
+          { emoji: "🌟", x: "88%", delay: 0.8, duration: 2.8 },
+          { emoji: "✨", x: "20%", delay: 1.5, duration: 3.6 },
+          { emoji: "💫", x: "75%", delay: 0.3, duration: 4 },
+          { emoji: "🎀", x: "55%", delay: 1.1, duration: 3.4 },
+        ].map(({ emoji, x, delay, duration }, i) => (
+          <motion.span
+            key={i}
+            className="absolute text-lg select-none pointer-events-none"
+            style={{ left: x, top: "10%" }}
+            animate={{ y: [0, -18, 0], rotate: [-5, 5, -5], opacity: [0.5, 0.9, 0.5] }}
+            transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {emoji}
+          </motion.span>
+        ))}
+
+        <p className="text-xs font-bold uppercase tracking-widest mb-0.5 text-white/80 relative z-10">
           Bonjour ALMA 👋
         </p>
         {session?.user && (
-          <p className="text-xs text-white/60 mb-1">
+          <p className="text-xs text-white/60 mb-1 relative z-10">
             {session.user.name ?? session.user.email}
           </p>
         )}
-        <p className="text-lg font-extrabold text-white mb-3">{getTodayFr()}</p>
+        <p className="text-lg font-extrabold text-white mb-3 relative z-10">{getTodayFr()}</p>
 
-        <div className="mb-3 inline-block">
+        <motion.div
+          className="mb-3 inline-block relative z-10"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        >
           <Mascotte state={mascotteState} />
-        </div>
+        </motion.div>
 
-        <div
-          className="rounded-2xl py-2 px-4 text-sm font-semibold text-white w-fit mx-auto mb-3"
+        <motion.div
+          className="rounded-2xl py-2 px-4 text-sm font-semibold text-white w-fit mx-auto mb-3 relative z-10"
           style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)" }}
+          animate={{ scale: [1, 1.02, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
           {getMascotteMessage(mascotteState, devoirs)}
-        </div>
+        </motion.div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center relative z-10">
           <motion.div
             className="relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold text-white"
             style={{ background: "rgba(255,255,255,0.2)" }}
+            whileTap={{ scale: 0.95 }}
           >
             {stats.streak > 0 && (
               <motion.div
                 className="absolute inset-0 rounded-full"
                 style={{ background: "rgba(255,255,255,0.15)" }}
-                animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
               />
             )}
             <span className="relative">{streakLabel(stats.streak)}</span>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, CalendarDays, Printer, Moon, Sun } from "lucide-react";
+import { motion } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   Dialog,
@@ -257,14 +258,23 @@ export default function PlanningPage() {
       {!loading && !error && (
         <>
           {/* ── Mobile: vue carte par jour ── */}
-          <div className="md:hidden flex flex-col gap-4">
+          <motion.div
+            className="md:hidden flex flex-col gap-4"
+            initial="hidden"
+            animate="visible"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+          >
             {DAYS_FULL.map((day, i) => {
               const daySlots = slots.filter((s) => s.day === i);
               const coursParJour = cours.filter((c) => c.jours.some((j) => j.day === i));
               const isToday = i === todayDay;
               return (
-                <div
+                <motion.div
                   key={day}
+                  variants={{
+                    hidden: { opacity: 0, y: 24, scale: 0.95 },
+                    visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 280, damping: 22 } },
+                  }}
                   className="rounded-3xl p-4"
                   style={{
                     background: "#ffffff",
@@ -289,8 +299,12 @@ export default function PlanningPage() {
                     {daySlots.map((slot) => {
                       const colorHex = SLOT_COLORS.find((c) => c.classes === slot.colorClass)?.hex ?? "#7c3aed";
                       return (
-                        <div
+                        <motion.div
                           key={slot.id}
+                          initial={{ opacity: 0, x: -12 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                          whileTap={{ scale: 0.97 }}
                           className="flex items-center justify-between"
                           style={{
                             background: "#ffffff",
@@ -327,7 +341,7 @@ export default function PlanningPage() {
                               <Trash2 size={14} />
                             </button>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
                     {coursParJour.map((cp) => {
@@ -379,10 +393,10 @@ export default function PlanningPage() {
                       </p>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
 
           {/* ── Desktop: tableau emploi du temps ── */}
           <div

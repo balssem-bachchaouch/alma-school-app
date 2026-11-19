@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Dialog,
@@ -81,6 +82,16 @@ const STATUT_CONFIG: Record<string, { color: string; bg: string }> = {
   "Terminé":  { color: "#10b981", bg: "#d1fae5" },
 };
 
+const listVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+const cardVariants = {
+  hidden: { opacity: 0, y: 28, scale: 0.93 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 320, damping: 22 } },
+  exit: { opacity: 0, scale: 0.9, y: -10, transition: { duration: 0.2 } },
+};
+
 const EMPTY_FORM = {
   titre: "",
   description: "",
@@ -102,6 +113,7 @@ export default function TachesPage() {
   const [filterType, setFilterType] = useState("Tout");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<"date" | "priorite" | "createdAt">("createdAt");
+  const [celebrationId, setCelebrationId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -185,7 +197,13 @@ export default function TachesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updated),
     });
-    if (r.ok) setTaches(prev => prev.map(x => x.id === t.id ? { ...x, statut: next } : x));
+    if (r.ok) {
+      setTaches(prev => prev.map(x => x.id === t.id ? { ...x, statut: next } : x));
+      if (next === "Terminé") {
+        setCelebrationId(t.id);
+        setTimeout(() => setCelebrationId(null), 1500);
+      }
+    }
   };
 
   const toggleSousTache = async (tache: Tache, stId: string) => {
@@ -337,7 +355,13 @@ export default function TachesPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <AnimatePresence mode="popLayout">
+        <motion.div
+          className="flex flex-col gap-3"
+          variants={listVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {filtered.map(t => {
             const pCfg = PRIORITE_CONFIG[t.priorite] ?? PRIORITE_CONFIG.Moyenne;
             const tCfg = TYPE_CONFIG[t.type] ?? TYPE_CONFIG.Perso;
@@ -347,9 +371,12 @@ export default function TachesPage() {
             const stDone = t.sousTaches.filter(s => s.done).length;
 
             return (
-              <div
+              <motion.div
                 key={t.id}
-                className="rounded-3xl p-4"
+                variants={cardVariants}
+                layout
+                whileTap={{ scale: 0.97 }}
+                className="rounded-3xl p-4 relative"
                 style={{
                   background: done ? "#f9f7ff" : "#ffffff",
                   border: `1px solid rgba(139,92,246,${done ? "0.1" : "0.2"})`,
@@ -357,11 +384,28 @@ export default function TachesPage() {
                   opacity: done ? 0.75 : 1,
                 }}
               >
+                {/* Celebration toast */}
+                <AnimatePresence>
+                  {celebrationId === t.id && (
+                    <motion.span
+                      key="cel"
+                      initial={{ y: 0, opacity: 1, scale: 1 }}
+                      animate={{ y: -48, opacity: 0, scale: 1.3 }}
+                      exit={{}}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      className="absolute left-1/2 -translate-x-1/2 top-2 text-lg font-extrabold pointer-events-none z-10 whitespace-nowrap"
+                    >
+                      🎉 Bravo !
+                    </motion.span>
+                  )}
+                </AnimatePresence>
                 <div className="flex items-start gap-3">
                   {/* Checkbox statut cyclique */}
-                  <button
+                  <motion.button
                     onClick={() => toggleStatut(t)}
-                    className="mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                    whileTap={{ scale: 0.65 }}
+                    transition={{ type: "spring", stiffness: 500 }}
+                    className="mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
                     style={{
                       borderColor: sCfg.color,
                       background: done ? sCfg.color : "transparent",
@@ -371,7 +415,7 @@ export default function TachesPage() {
                     {t.statut === "En cours" && (
                       <div className="w-2 h-2 rounded-full" style={{ background: sCfg.color }} />
                     )}
-                  </button>
+                  </motion.button>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -485,10 +529,11 @@ export default function TachesPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
+        </AnimatePresence>
       )}
 
       {/* Dialog ajout/modification */}
