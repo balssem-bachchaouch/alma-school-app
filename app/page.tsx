@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle2, Circle, LogOut } from "lucide-react";
+import { Clock, CheckCircle2, Circle, LogOut, Moon, Sun } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { useTheme } from "@/components/ThemeProvider";
 import type { Devoir, GameStats, Badge } from "@/lib/types";
 import HelpButton from "@/components/HelpButton";
 
@@ -195,6 +196,7 @@ export default function HomePage() {
     }
   };
 
+  const { theme, toggle: toggleTheme } = useTheme();
   const unlockedBadges = badges.filter((b) => b.unlocked);
   const badgeSlots: (Badge | null)[] = [
     ...unlockedBadges.slice(0, 3),
@@ -228,6 +230,14 @@ export default function HomePage() {
           <Link href="/stats" className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform" style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }} title="Statistiques">
             📊
           </Link>
+          <button
+            onClick={toggleTheme}
+            className="md:hidden w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+            title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
           <HelpButton pageTitle="Accueil" sections={ACCUEIL_GUIDE} />
           <div className="relative" ref={menuRef}>
             <button

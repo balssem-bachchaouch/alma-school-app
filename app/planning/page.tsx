@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, CalendarDays, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, Printer, Moon, Sun } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 import {
   Dialog,
   DialogContent,
@@ -95,6 +96,7 @@ function getCoursColor(name: string) {
 }
 
 export default function PlanningPage() {
+  const { theme, toggle: toggleTheme } = useTheme();
   const [slots, setSlots] = useState<PlanningSlot[]>([]);
   const [cours, setCours] = useState<CoursParticulier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +199,14 @@ export default function PlanningPage() {
           <HelpButton pageTitle="Planning" sections={PLANNING_GUIDE} />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="md:hidden w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+            title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
