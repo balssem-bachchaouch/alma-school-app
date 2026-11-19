@@ -89,6 +89,7 @@ export default function HomePage() {
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [prochaineSeance, setProchaineSeance] = useState<{ nom: string; date: string; heure: string } | null>(null);
   const initialized = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +119,27 @@ export default function HomePage() {
       .then((data: Devoir[]) => setDevoirs(data))
       .catch(() => {})
       .finally(() => setDevoirsLoading(false));
+
+    fetch("/api/cours")
+      .then(r => r.ok ? r.json() : [])
+      .then((cours: { nom: string; jours: { day: number; startTime: string }[]; cycles: { seances: { datePrevu: string; done: boolean }[] }[] }[]) => {
+        const todayISO = new Date().toISOString().split("T")[0];
+        type Candidate = { nom: string; date: string; heure: string };
+        const candidates: Candidate[] = [];
+        for (const c of cours) {
+          for (const cy of c.cycles) {
+            for (const s of cy.seances) {
+              if (!s.done && s.datePrevu >= todayISO) {
+                const jour = c.jours.find(j => ((new Date(s.datePrevu + "T12:00:00").getDay() + 6) % 7) === j.day);
+                candidates.push({ nom: c.nom, date: s.datePrevu, heure: jour?.startTime ?? "" });
+              }
+            }
+          }
+        }
+        candidates.sort((a, b) => a.date.localeCompare(b.date));
+        if (candidates[0]) setProchaineSeance(candidates[0]);
+      })
+      .catch(() => {});
   }, []);
 
   const today = todayStr();
@@ -202,6 +224,9 @@ export default function HomePage() {
         <div className="flex items-center gap-2">
           <Link href="/matieres" className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform" style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }} title="Matières">
             📚
+          </Link>
+          <Link href="/stats" className="w-8 h-8 rounded-full flex items-center justify-center text-base active:scale-90 transition-transform" style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }} title="Statistiques">
+            📊
           </Link>
           <HelpButton pageTitle="Accueil" sections={ACCUEIL_GUIDE} />
           <div className="relative" ref={menuRef}>
@@ -361,6 +386,32 @@ export default function HomePage() {
           </motion.div>
         </div>
       </div>
+
+      {/* ── PROCHAINE SÉANCE ── */}
+      {prochaineSeance && (
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.4, delay: 0.07 }}
+          className="mb-5 rounded-2xl px-4 py-3 flex items-center gap-3"
+          style={{ background: "#ede9fe", border: "1px solid rgba(124,58,237,0.2)" }}
+        >
+          <span className="text-2xl">🎓</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold" style={{ color: "#5b21b6" }}>Prochaine séance</p>
+            <p className="text-sm font-extrabold truncate" style={{ color: "#3b0764" }}>{prochaineSeance.nom}</p>
+            <p className="text-xs" style={{ color: "#7c3aed" }}>
+              {new Date(prochaineSeance.date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+              {prochaineSeance.heure && ` · ${prochaineSeance.heure}`}
+            </p>
+          </div>
+          <Link href="/cours" className="text-xs font-bold px-3 py-1.5 rounded-xl text-white shrink-0"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
+            Voir →
+          </Link>
+        </motion.div>
+      )}
 
       {/* ── EN RETARD ── */}
       {devoirsEnRetard.length > 0 && (

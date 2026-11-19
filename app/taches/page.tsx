@@ -101,6 +101,7 @@ export default function TachesPage() {
   const [filterStatut, setFilterStatut] = useState("Tout");
   const [filterType, setFilterType] = useState("Tout");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<"date" | "priorite" | "createdAt">("createdAt");
 
   const load = async () => {
     setLoading(true);
@@ -197,11 +198,24 @@ export default function TachesPage() {
     if (r.ok) setTaches(prev => prev.map(x => x.id === tache.id ? { ...x, sousTaches: newST } : x));
   };
 
-  const filtered = taches.filter(t => {
-    if (filterStatut !== "Tout" && t.statut !== filterStatut) return false;
-    if (filterType !== "Tout" && t.type !== filterType) return false;
-    return true;
-  });
+  const PRIORITE_ORDER: Record<string, number> = { Haute: 0, Moyenne: 1, Basse: 2 };
+
+  const filtered = taches
+    .filter(t => {
+      if (filterStatut !== "Tout" && t.statut !== filterStatut) return false;
+      if (filterType !== "Tout" && t.type !== filterType) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "date") {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      if (sortBy === "priorite") return (PRIORITE_ORDER[a.priorite] ?? 1) - (PRIORITE_ORDER[b.priorite] ?? 1);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
 
   const counts: Record<string, number> = {
     Tout: taches.length,
@@ -249,7 +263,7 @@ export default function TachesPage() {
       </div>
 
       {/* Filtres type */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-3">
         {(["Tout", ...TYPES] as string[]).map(tp => {
           const cfg = TYPE_CONFIG[tp];
           const active = filterType === tp;
@@ -267,6 +281,20 @@ export default function TachesPage() {
             </button>
           );
         })}
+      </div>
+
+      {/* Tri */}
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-xs font-semibold shrink-0" style={{ color: "#6b7280" }}>Trier :</span>
+        {([["createdAt", "Récent"], ["date", "Échéance"], ["priorite", "Priorité"]] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setSortBy(key)}
+            className="px-2.5 py-1 rounded-full text-xs font-semibold transition-all"
+            style={sortBy === key
+              ? { background: "#7c3aed", color: "#fff" }
+              : { background: "rgba(124,58,237,0.06)", color: "#7c3aed" }}>
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Liste */}

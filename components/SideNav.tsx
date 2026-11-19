@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Calendar, GraduationCap, ListTodo } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const tabs = [
   { href: "/", icon: Home, label: "Accueil" },
@@ -12,8 +13,23 @@ const tabs = [
   { href: "/cours", icon: GraduationCap, label: "Cours" },
 ];
 
+function useTachesEnRetard() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    fetch("/api/taches")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { statut: string; dueDate?: string }[]) => {
+        setCount(data.filter(t => t.statut !== "Terminé" && t.dueDate && t.dueDate < today).length);
+      })
+      .catch(() => {});
+  }, []);
+  return count;
+}
+
 export default function SideNav() {
   const pathname = usePathname();
+  const tachesEnRetard = useTachesEnRetard();
 
   if (pathname === "/login" || pathname === "/register") return null;
 
@@ -44,6 +60,7 @@ export default function SideNav() {
       <div className="flex flex-col gap-1 px-3 py-4 flex-1">
         {tabs.map(({ href, icon: Icon, label }) => {
           const active = pathname === href;
+          const badge = href === "/taches" && tachesEnRetard > 0 ? tachesEnRetard : 0;
           return (
             <Link
               key={href}
@@ -55,7 +72,15 @@ export default function SideNav() {
                   : { color: "#6b7280" }
               }
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
+              <div className="relative">
+                <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
+                {badge > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-white flex items-center justify-center font-bold"
+                    style={{ background: "#dc2626", fontSize: 9 }}>
+                    {badge > 9 ? "9+" : badge}
+                  </span>
+                )}
+              </div>
               <span className="font-semibold text-sm">{label}</span>
               {active && (
                 <div

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -195,14 +196,24 @@ export default function PlanningPage() {
           <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📅 Mon Planning</h1>
           <HelpButton pageTitle="Planning" sections={PLANNING_GUIDE} />
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
-          style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
-        >
-          <Plus size={16} />
-          Ajouter
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/calendrier"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+          >
+            <CalendarDays size={16} />
+            <span className="hidden sm:inline">Calendrier</span>
+          </Link>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold shadow-sm active:scale-95 transition-transform"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+          >
+            <Plus size={16} />
+            Ajouter
+          </button>
+        </div>
       </div>
 
       {loading && (

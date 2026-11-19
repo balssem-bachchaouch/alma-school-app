@@ -89,6 +89,7 @@ export default function DevoirsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [coinToast, setCoinToast] = useState<string | null>(null);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
+  const [search, setSearch] = useState("");
 
   const loadDevoirs = async () => {
     try {
@@ -186,7 +187,12 @@ export default function DevoirsPage() {
     }
   };
 
-  const groups = devoirs.reduce<Record<string, Devoir[]>>((acc, d) => {
+  const q = search.trim().toLowerCase();
+  const devoirsFiltres = q
+    ? devoirs.filter(d => d.titre.toLowerCase().includes(q) || d.matiere.toLowerCase().includes(q))
+    : devoirs;
+
+  const groups = devoirsFiltres.reduce<Record<string, Devoir[]>>((acc, d) => {
     const label = getDateLabel(d.dueDate);
     acc[label] = [...(acc[label] ?? []), d];
     return acc;
@@ -203,7 +209,7 @@ export default function DevoirsPage() {
 
   return (
     <div className="px-4 pt-8 pb-24 max-w-md mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-extrabold" style={{ color: "#3b0764" }}>📚 Mes Devoirs</h1>
           <HelpButton pageTitle="Devoirs" sections={DEVOIRS_GUIDE} />
@@ -216,6 +222,22 @@ export default function DevoirsPage() {
           <Plus size={16} />
           Ajouter
         </button>
+      </div>
+
+      {/* Barre de recherche */}
+      <div className="relative mb-5">
+        <input
+          type="text"
+          placeholder="Rechercher un devoir..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+          style={{ border: "1px solid rgba(139,92,246,0.25)", background: "#faf8ff", color: "#3b0764" }}
+        />
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
+        {search && (
+          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: "#a78bfa" }}>✕</button>
+        )}
       </div>
 
       {loading && (
