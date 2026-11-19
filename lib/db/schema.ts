@@ -164,3 +164,15 @@ export const tachesPerso = pgTable('taches_perso', {
   sousTaches: text('sous_taches').notNull().default('[]'),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+export const notes = pgTable('notes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  titre: text('titre').notNull(),
+  contenu: text('contenu').notNull().default(''),
+  couleur: text('couleur').notNull().default('#ffffff'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});

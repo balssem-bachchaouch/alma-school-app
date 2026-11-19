@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { TachePerso, Note } from "@/lib/types";
-import { getTachesPerso, saveTachesPerso, getNotes, saveNotes } from "@/lib/storage";
+import { getTachesPerso, saveTachesPerso } from "@/lib/storage";
 
 const CATEGORIES_TACHE = ["Maison", "Sport", "Loisirs", "Famille", "Autre"];
 
@@ -73,8 +73,11 @@ export default function PersoPage() {
 
   useEffect(() => {
     setTaches(getTachesPerso());
-    setNotes(getNotes());
-    setLoaded(true);
+    fetch("/api/notes")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Note[]) => setNotes(data))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   // ── tâche handlers ──
@@ -149,27 +152,36 @@ export default function PersoPage() {
     setOpenNote(true);
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!noteForm.titre) return;
-    const now = new Date().toISOString();
-    let next: Note[];
     if (editingNote) {
-      next = notes.map((n) =>
-        n.id === editingNote.id ? { ...n, ...noteForm, updatedAt: now } : n
-      );
+      const res = await fetch(`/api/notes/${editingNote.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(noteForm),
+      });
+      if (res.ok) {
+        const updated: Note = await res.json();
+        setNotes(notes.map(n => n.id === editingNote.id ? updated : n));
+      }
     } else {
-      next = [{ id: crypto.randomUUID(), ...noteForm, updatedAt: now }, ...notes];
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(noteForm),
+      });
+      if (res.ok) {
+        const created: Note = await res.json();
+        setNotes([created, ...notes]);
+      }
     }
-    setNotes(next);
-    saveNotes(next);
     setOpenNote(false);
   };
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
     if (!window.confirm("Supprimer cette note ?")) return;
-    const next = notes.filter((n) => n.id !== id);
-    setNotes(next);
-    saveNotes(next);
+    await fetch(`/api/notes/${id}`, { method: "DELETE" });
+    setNotes(notes.filter((n) => n.id !== id));
     setViewNote(null);
   };
 

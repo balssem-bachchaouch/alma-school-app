@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, Printer } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -197,6 +197,15 @@ export default function PlanningPage() {
           <HelpButton pageTitle="Planning" sections={PLANNING_GUIDE} />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
+            style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}
+            title="Imprimer / Exporter PDF"
+          >
+            <Printer size={16} />
+            <span className="hidden sm:inline">Exporter</span>
+          </button>
           <Link
             href="/calendrier"
             className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"

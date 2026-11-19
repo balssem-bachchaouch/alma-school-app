@@ -104,6 +104,23 @@
   }
 }
 
+@media print {
+  nav, [data-print-hide], .bottom-nav, button:not([data-print-show]) {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .max-w-md {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+}
+
 @keyframes twinkle {
   0%, 100% { opacity: 0.2; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.4); }
