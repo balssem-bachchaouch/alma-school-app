@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Calendar, GraduationCap, ListTodo, Moon, Sun, ShoppingBag } from "lucide-react";
+import { Home, BookOpen, Calendar, GraduationCap, ListTodo, Moon, Sun, ShoppingBag, Timer, FlipHorizontal2, Trophy, Target, BarChart3, Calculator, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 
@@ -13,6 +13,13 @@ const tabs = [
   { href: "/taches", icon: ListTodo, label: "Tâches" },
   { href: "/cours", icon: GraduationCap, label: "Cours" },
   { href: "/recompenses", icon: ShoppingBag, label: "Boutique 🪙" },
+  { href: "/pomodoro", icon: Timer, label: "Pomodoro ⏱️" },
+  { href: "/flashcards", icon: FlipHorizontal2, label: "Flashcards 🃏" },
+  { href: "/defis", icon: Target, label: "Défis 🎯" },
+  { href: "/badges", icon: Trophy, label: "Badges 🏅" },
+  { href: "/stats", icon: BarChart3, label: "Statistiques 📊" },
+  { href: "/moyenne", icon: Calculator, label: "Mes Moyennes 📐" },
+  { href: "/parent", icon: Users, label: "Mode Parent 👨‍👩‍👦" },
 ];
 
 function useTachesEnRetard() {

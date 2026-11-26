@@ -26,9 +26,39 @@ export interface CartableItem {
 
 export interface GameStats {
   coins: number;
+  xp: number;
   totalCompleted: number;
   lastActiveDate: string;
   streak: number;
+  cartableCompletions?: number;
+  pomodorosCompleted?: number;
+}
+
+export interface Flashcard {
+  id: string;
+  matiere: string;
+  front: string;
+  back: string;
+  known: boolean;
+  createdAt: string;
+}
+
+export interface DefiWeekly {
+  id: string;
+  emoji: string;
+  titre: string;
+  description: string;
+  cible: number;
+  progres: number;
+  recompense: number;
+  type: "devoirs" | "pomodoro" | "taches" | "flashcards" | "streak";
+  weekStart: string;
+  done: boolean;
+}
+
+export interface NoteMatiere {
+  matiere: string;
+  notes: { valeur: number; coeff: number; label: string }[];
 }
 
 export interface Badge {

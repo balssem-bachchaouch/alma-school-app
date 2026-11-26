@@ -1,4 +1,4 @@
-import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge, CoursParticulier, TachePerso, Note } from "./types";
+import type { Devoir, PlanningSlot, CartableItem, GameStats, Badge, CoursParticulier, TachePerso, Note, Flashcard, DefiWeekly, NoteMatiere } from "./types";
 import { BADGES_CONFIG } from "./badges";
 
 export function get<T>(key: string, fallback: T): T {
@@ -96,7 +96,7 @@ export function getCartableItems(): CartableItem[] {
 export function saveCartableItems(i: CartableItem[]) { set("alma_cartable_items", i); }
 
 const GAME_STATS_KEY = "alma_game_stats";
-const DEFAULT_STATS: GameStats = { coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 };
+const DEFAULT_STATS: GameStats = { coins: 0, xp: 0, totalCompleted: 0, lastActiveDate: "", streak: 0, pomodorosCompleted: 0 };
 
 export function getGameStats(): GameStats {
   return get<GameStats>(GAME_STATS_KEY, DEFAULT_STATS);
@@ -184,6 +184,53 @@ export function getNotes(): Note[] {
 
 export function saveNotes(notes: Note[]): void {
   set("alma_notes", notes);
+}
+
+export function getFlashcards(): Flashcard[] {
+  return get<Flashcard[]>("alma_flashcards", []);
+}
+
+export function saveFlashcards(cards: Flashcard[]): void {
+  set("alma_flashcards", cards);
+}
+
+function getWeekStart(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - ((day + 6) % 7);
+  d.setDate(diff);
+  return d.toISOString().split("T")[0];
+}
+
+const DEFIS_TEMPLATES: Omit<DefiWeekly, "progres" | "weekStart" | "done">[] = [
+  { id: "d_devoirs5", emoji: "📚", titre: "5 devoirs terminés", description: "Termine 5 devoirs cette semaine", cible: 5, recompense: 50, type: "devoirs" },
+  { id: "d_pomodoro3", emoji: "⏱️", titre: "3 Pomodoros", description: "Complète 3 sessions Pomodoro", cible: 3, recompense: 40, type: "pomodoro" },
+  { id: "d_taches3", emoji: "✅", titre: "3 tâches terminées", description: "Termine 3 tâches cette semaine", cible: 3, recompense: 30, type: "taches" },
+  { id: "d_flash5", emoji: "🃏", titre: "5 flashcards créées", description: "Crée 5 nouvelles flashcards", cible: 5, recompense: 35, type: "flashcards" },
+  { id: "d_streak3", emoji: "🔥", titre: "Série de 3 jours", description: "Reste actif 3 jours de suite", cible: 3, recompense: 60, type: "streak" },
+];
+
+export function getDefis(): DefiWeekly[] {
+  const stored = get<DefiWeekly[]>("alma_defis", []);
+  const weekStart = getWeekStart();
+  if (stored.length === 0 || stored[0]?.weekStart !== weekStart) {
+    const newDefis: DefiWeekly[] = DEFIS_TEMPLATES.map(t => ({ ...t, progres: 0, weekStart, done: false }));
+    set("alma_defis", newDefis);
+    return newDefis;
+  }
+  return stored;
+}
+
+export function saveDefis(defis: DefiWeekly[]): void {
+  set("alma_defis", defis);
+}
+
+export function getNotesMatiere(): NoteMatiere[] {
+  return get<NoteMatiere[]>("alma_notes_matiere", []);
+}
+
+export function saveNotesMatiere(notes: NoteMatiere[]): void {
+  set("alma_notes_matiere", notes);
 }
 
 const DEFAULT_MATIERES = [

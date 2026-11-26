@@ -85,7 +85,7 @@ export default function HomePage() {
   const router = useRouter();
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [devoirsLoading, setDevoirsLoading] = useState(true);
-  const [stats, setStats] = useState<GameStats>({ coins: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
+  const [stats, setStats] = useState<GameStats>({ coins: 0, xp: 0, totalCompleted: 0, lastActiveDate: "", streak: 0 });
   const [badges, setBadges] = useState<Badge[]>([]);
   const [celebrating, setCelebrating] = useState(false);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
